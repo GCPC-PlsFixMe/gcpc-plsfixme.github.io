@@ -78,12 +78,12 @@ h1 {
 h1 .title-word {
     display: inline-flex;
     position: relative;
-    color: #77c241; /* Fallback solid color */
     white-space: nowrap;
     padding: 0 0.2em;
+    color: transparent; /* Hide the actual text */
 }
 
-h1 .title-word::after {
+h1 .title-word::before {
     content: attr(data-text);
     position: absolute;
     left: 0;
@@ -94,8 +94,8 @@ h1 .title-word::after {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    color: transparent;
     z-index: 1;
+    pointer-events: none;
 }
 
 h1 .letter {
