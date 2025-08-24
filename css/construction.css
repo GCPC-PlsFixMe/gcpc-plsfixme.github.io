@@ -35,7 +35,7 @@
 
 .construction-alert h3 {
     margin: 0 0 10px 0;
-    color: var(--accent-color);
+    color: #ff00ff; /* Magenta color */
     display: flex;
     align-items: center;
     gap: 10px;

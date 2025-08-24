@@ -69,26 +69,41 @@ h1 {
     justify-content: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    line-height: 1;
+    line-height: 1.2; /* Increased line height */
     perspective: 1000px;
+    padding-top: 0.5em; /* Add padding to prevent clipping */
+    overflow: visible; /* Ensure content isn't clipped */
 }
 
 h1 .title-word {
     display: inline-flex;
     position: relative;
+    color: #77c241; /* Fallback solid color */
+    white-space: nowrap;
+    padding: 0 0.2em;
+}
+
+h1 .title-word::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(45deg, var(--accent-color), var(--accent-light));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    white-space: nowrap;
-    padding: 0 0.2em;
+    z-index: 1;
 }
 
 h1 .letter {
     display: inline-block;
     transform-origin: 50% 100%;
     animation: wave 2s infinite ease-in-out;
+    padding: 0.1em 0; /* Add padding to prevent clipping */
+    margin-top: -0.1em; /* Compensate for padding */
 }
 
 /* Create staggered animation for each letter */
@@ -110,7 +125,7 @@ h1 .heart {
 
 @keyframes wave {
     0%, 100% { transform: translateY(0) rotateX(0); }
-    50% { transform: translateY(-15px) rotateX(10deg); }
+    50% { transform: translateY(-10px) rotateX(10deg); } /* Reduced from -15px to -10px */
 }
 
 @keyframes float {
@@ -143,14 +158,7 @@ h1 .heart {
     right: -10px;
     bottom: -10px;
     border: 4px solid #77c241;
-    border-image: 
-        linear-gradient(
-            45deg,
-            transparent 25%,
-            #77c241 25%,
-            #77c241 75%,
-            transparent 75%
-        ) 4;
+    border-image: linear-gradient(45deg, var(--accent-color), var(--accent-light)) 4;
     image-rendering: pixelated;
     z-index: -1;
     animation: borderPulse 4s linear infinite;
@@ -217,7 +225,7 @@ h1 .heart {
 .project-card i {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    color: var(--accent-color);
+    color: #ff00ff; /* Magenta color */
 }
 
 .project-card h3 {
@@ -288,7 +296,7 @@ h1 .heart {
 
 .stat-item i {
     font-size: 2rem;
-    color: var(--accent-color);
+    color: #ff00ff; /* Magenta color */
     margin-bottom: 0.5rem;
 }
 
