@@ -210,10 +210,6 @@ h1 .heart {
 /* Project Grid */
 .projects {
     margin: 4rem 0;
-    background: var(--card-bg);
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
 .project-grid {
@@ -224,25 +220,29 @@ h1 .heart {
 }
 
 .project-card {
-    background: var(--card-bg);
-    border-radius: 10px;
-    padding: 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem;
     text-align: center;
     transition: var(--transition);
-    backdrop-filter: blur(10px);
-    border: 1px solid #00ffff; /* Cyan border */
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    border: 1px solid rgba(0, 255, 255, 0.2);
 }
 
 .project-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #00ffff;
 }
 
 .project-card i {
     font-size: 2.5rem;
     margin-bottom: 1rem;
-    color: #ff00ff; /* Magenta color */
+    color: #00ffff; /* Cyan color to match Projects section */
+    transition: var(--transition);
+}
+
+.project-card:hover i {
+    color: #ffffff;
 }
 
 .project-card h3 {
@@ -259,25 +259,140 @@ h1 .heart {
     opacity: 0.8;
 }
 
-/* About Section */
-.about {
-    margin: 4rem 0;
+/* Content Box Shared Styles */
+.content-box {
     background: var(--card-bg);
     padding: 2rem;
     border-radius: 10px;
     backdrop-filter: blur(10px);
-    border: 1px solid #00ffff; /* Cyan border */
+    margin-top: 1.5rem;
+}
+
+/* Projects Section */
+.projects .content-box {
+    border: 1px solid #00ffff;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 }
 
-.about h2, .projects h2 {
+.projects h2::after {
+    background: linear-gradient(90deg, #00ffff, #00cccc);
+}
+
+/* Documents Section */
+.documents .content-box {
+    border: 1px solid #ff00ff;
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+}
+
+.documents h2::after {
+    background: linear-gradient(90deg, #ff00ff, #cc00cc);
+}
+
+/* About Section */
+.about .content-box {
+    border: 1px solid #77c241;
+    box-shadow: 0 0 10px rgba(119, 194, 65, 0.3);
+}
+
+.about h2::after {
+    background: linear-gradient(90deg, #77c241, #5a9a2e);
+}
+
+/* Document Grid */
+.document-grid, .experiment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.document-card, .experiment-card {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: var(--transition);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.document-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #ff00ff;
+}
+
+.experiment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #ff00ff;
+}
+
+.document-card i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #ff00ff; /* Magenta for Documents section */
+    transition: var(--transition);
+}
+
+.experiment-card i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #ff00ff; /* Magenta for Rabbit Hole section */
+    transition: var(--transition);
+}
+
+.document-card:hover i,
+.experiment-card:hover i {
+    color: #ffffff;
+}
+
+.document-card:hover i, .experiment-card:hover i {
+    transform: scale(1.1);
+}
+
+.document-card h3, .experiment-card h3 {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.document-card p, .experiment-card p {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Rabbit Hole Section */
+.rabbit-hole .content-box {
+    border: 1px solid #ff00ff;
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+}
+
+.rabbit-hole .experiment-card {
+    border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.rabbit-hole .experiment-card:hover {
+    border-color: #ff00ff;
+}
+
+.rabbit-hole h2::after {
+    background: linear-gradient(90deg, #ff00ff, #cc00cc);
+}
+
+
+.rabbit-hole .experiment-card:hover {
+    border-color: #ff00ff;
+}
+
+/* Section Headers */
+.documents h2, .rabbit-hole h2 {
     margin-bottom: 1.5rem;
     color: white;
     position: relative;
     display: inline-block;
 }
 
-.about h2::after, .projects h2::after {
+.documents h2::after, .rabbit-hole h2::after {
     content: '';
     position: absolute;
     bottom: -10px;
@@ -286,6 +401,55 @@ h1 .heart {
     height: 3px;
     background: linear-gradient(90deg, var(--accent-color), var(--accent-dark));
     border-radius: 3px;
+}
+
+.rabbit-hole h2::after {
+    background: linear-gradient(90deg, #ff00ff, #cc00cc);
+}
+
+/* Section Spacing */
+.documents, .rabbit-hole {
+    margin: 4rem 0;
+}
+
+/* About Section */
+.about {
+    margin: 4rem 0;
+}
+
+/* Section Headers */
+.about h2, .projects h2, .documents h2, .rabbit-hole h2 {
+    margin-bottom: 1.5rem;
+    color: white;
+    position: relative;
+    display: inline-block;
+}
+
+/* Section Title Underlines */
+.about h2::after, 
+.projects h2::after, 
+.documents h2::after, 
+.rabbit-hole h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    border-radius: 3px;
+}
+
+.about h2::after {
+    background: linear-gradient(90deg, #77c241, #5a9a2e);
+}
+
+.projects h2::after {
+    background: linear-gradient(90deg, #00ffff, #00cccc);
+}
+
+.documents h2::after,
+.rabbit-hole h2::after {
+    background: linear-gradient(90deg, #ff00ff, #cc00cc);
 }
 
 /* Stats */
@@ -304,17 +468,24 @@ h1 .heart {
     border-radius: 8px;
     min-width: 150px;
     transition: var(--transition);
+    border: 1px solid rgba(119, 194, 65, 0.2);
 }
 
 .stat-item:hover {
     transform: translateY(-3px);
-    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #77c241;
 }
 
 .stat-item i {
     font-size: 2rem;
-    color: #ff00ff; /* Magenta color */
+    color: #77c241; /* Green color to match About section */
     margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+
+.stat-item:hover i {
+    color: #ffffff;
 }
 
 .stat-item span {
