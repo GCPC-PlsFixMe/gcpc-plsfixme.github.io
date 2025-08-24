@@ -53,16 +53,23 @@ canvas#nodeGraph {
 /* Header Styles */
 header {
     text-align: center;
-    padding: 4rem 0;
+    padding: 4rem 0 2rem 0;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 h1 {
     font-size: 3.5rem;
-    margin-bottom: 1rem;
-    display: inline-block;
-    line-height: 1.2;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    line-height: 1;
 }
 
 h1 span {
@@ -72,13 +79,24 @@ h1 span {
     -webkit-text-fill-color: transparent;
     color: transparent;
     display: inline-block;
+    white-space: nowrap;
+}
+
+h1 .heart {
+    margin: 0 0.5rem;
+    font-size: 3rem;
+    line-height: 1;
+    position: relative;
+    top: -0.1em; /* Slight vertical adjustment */
 }
 
 .tagline {
     font-size: 1.2rem;
     color: var(--accent-color);
-    margin-bottom: 2rem;
+    margin: 0 0 2rem 0;
     font-weight: 300;
+    text-align: center;
+    letter-spacing: 0.05em;
 }
 
 /* Project Grid */
