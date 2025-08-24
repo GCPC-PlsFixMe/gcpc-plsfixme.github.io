@@ -59,7 +59,7 @@ class NodeGraph {
                 speed: Math.random() * 0.2 + 0.1,
                 angle: Math.random() * Math.PI * 2,
                 radius: (Math.random() * 50) + 50,
-                color: `rgba(0, 212, 255, ${Math.random() * 0.3 + 0.1})`
+                color: `rgba(119, 194, 65, ${Math.random() * 0.3 + 0.2})`
             });
         }
         
@@ -137,27 +137,46 @@ class NodeGraph {
     }
 
     draw() {
-        // Clear canvas with semi-transparent background for trail effect
-        this.ctx.fillStyle = 'rgba(18, 18, 18, 0.05)';
+        // Clear the entire canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw a solid background
+        this.ctx.fillStyle = '#121212';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw lines
-        this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.1)';
-        this.ctx.lineWidth = 1;
-        
+        // Draw lines with a subtle glow effect
         this.lines.forEach(line => {
+            const gradient = this.ctx.createLinearGradient(line.x1, line.y1, line.x2, line.y2);
+            gradient.addColorStop(0, `rgba(160, 214, 122, ${line.opacity * 0.8})`);
+            gradient.addColorStop(1, `rgba(90, 154, 45, ${line.opacity * 0.8})`);
+            
             this.ctx.beginPath();
             this.ctx.moveTo(line.x1, line.y1);
             this.ctx.lineTo(line.x2, line.y2);
-            this.ctx.strokeStyle = `rgba(0, 212, 255, ${line.opacity})`;
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = 1.5;
             this.ctx.stroke();
         });
         
-        // Draw nodes
+        // Draw nodes with a subtle glow
         this.nodes.forEach(node => {
+            // Glow effect
+            const gradient = this.ctx.createRadialGradient(
+                node.x, node.y, 0,
+                node.x, node.y, node.size * 3
+            );
+            gradient.addColorStop(0, 'rgba(160, 214, 122, 0.6)');
+            gradient.addColorStop(1, 'rgba(90, 154, 45, 0)');
+            
+            this.ctx.beginPath();
+            this.ctx.arc(node.x, node.y, node.size * 3, 0, Math.PI * 2);
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
+            
+            // Node core
             this.ctx.beginPath();
             this.ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-            this.ctx.fillStyle = node.color;
+            this.ctx.fillStyle = '#a0d67a';
             this.ctx.fill();
         });
     }

@@ -1,11 +1,13 @@
 /* Base Styles */
 :root {
-    --primary-color: #2d2d86;
-    --secondary-color: #4a4ab8;
-    --accent-color: #00d4ff;
+    --primary-color: #2d4a14;         /* Darker shade of the accent color */
+    --secondary-color: #3e6a1e;      /* Slightly lighter shade */
+    --accent-color: #77c241;         /* The requested green */
+    --accent-light: #a0d67a;         /* Lighter variant for hover states */
+    --accent-dark: #5a9a2d;          /* Darker variant for active states */
     --text-color: #e0e0e0;
     --background-dark: #121212;
-    --card-bg: rgba(30, 30, 46, 0.7);
+    --card-bg: rgba(30, 40, 20, 0.7); /* Slightly green-tinted dark background */
     --transition: all 0.3s ease;
 }
 
@@ -59,9 +61,11 @@ header {
 h1 {
     font-size: 3.5rem;
     margin-bottom: 1rem;
-    background: linear-gradient(45deg, var(--accent-color), var(--secondary-color));
+    background: linear-gradient(45deg, var(--accent-color), var(--accent-light));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback for older browsers */
     display: inline-block;
 }
 
@@ -143,7 +147,7 @@ h1 {
     left: 0;
     width: 50px;
     height: 3px;
-    background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-dark));
     border-radius: 3px;
 }
 
@@ -224,6 +228,9 @@ footer {
 .heart {
     animation: float 3s ease-in-out infinite;
     display: inline-block;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 1;
 }
 
 /* Responsive Design */
