@@ -4,13 +4,13 @@
     top: 20px;
     right: 20px;
     background: rgba(30, 40, 20, 0.9);
-    border: 2px solid var(--accent-color);
+    border: 2px solid #ffa500; /* Orange border */
     border-radius: 10px;
     padding: 15px 20px;
-    color: var(--accent-light);
+    color: #fff8dc; /* Light orange text */
     font-family: 'Share Tech Mono', monospace;
     z-index: 1000;
-    box-shadow: 0 0 20px rgba(119, 194, 65, 0.3);
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.3); /* Orange glow */
     backdrop-filter: blur(10px);
     transform: translateX(120%);
     animation: slideIn 0.8s forwards 1s, pulse 2s infinite 2s;
@@ -73,9 +73,9 @@
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(119, 194, 65, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(119, 194, 65, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(119, 194, 65, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 165, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
 }
 
 @keyframes shine {
