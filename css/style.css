@@ -91,12 +91,48 @@ h1 .heart {
 }
 
 .tagline {
-    font-size: 1.2rem;
-    color: var(--accent-color);
-    margin: 0 0 2rem 0;
-    font-weight: 300;
+    font-family: 'Orbitron', 'Share Tech Mono', monospace;
+    font-size: 1.8rem;
+    color: #77c241;
+    margin: 1.5rem 0 3rem 0;
+    font-weight: 700;
     text-align: center;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-shadow: 
+        0 0 5px #77c241,
+        0 0 10px #77c241,
+        0 0 20px rgba(119, 194, 65, 0.5);
+    position: relative;
+    padding: 0.5rem 1.5rem;
+    display: inline-block;
+}
+
+.tagline::before,
+.tagline::after {
+    content: '//';
+    color: #77c241;
+    opacity: 0.7;
+    margin: 0 1rem;
+    text-shadow: 0 0 5px #77c241;
+}
+
+@keyframes flicker {
+    0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+        opacity: 0.99;
+        text-shadow: 
+            0 0 5px #77c241,
+            0 0 10px #77c241,
+            0 0 20px rgba(119, 194, 65, 0.5);
+    }
+    20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+        opacity: 0.4;
+        text-shadow: none;
+    }
+}
+
+.tagline {
+    animation: flicker 8s infinite alternate;
 }
 
 /* Project Grid */
