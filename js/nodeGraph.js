@@ -53,12 +53,12 @@ class NodeGraph {
             this.nodes.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * this.canvas.height,
-                size: Math.random() * 2 + 1,
+                size: Math.random() * 1 + 0.5,
                 baseX: Math.random() * this.canvas.width,
                 baseY: Math.random() * this.canvas.height,
                 speed: Math.random() * 0.2 + 0.1,
                 angle: Math.random() * Math.PI * 2,
-                radius: (Math.random() * 50) + 50,
+                radius: (Math.random() * 20) + 20,
                 color: Math.random() > 0.5 ? '#00ffff' : '#ff00ff', // Cyan or Magenta
                 pulseSpeed: Math.random() * 0.02 + 0.01,
                 pulsePhase: Math.random() * Math.PI * 2,
@@ -97,14 +97,18 @@ class NodeGraph {
         
         // Update node positions and calculate proximities
         this.nodes.forEach((node, i) => {
-            // Move nodes in a circular motion
-            node.angle += node.speed * 0.01;
-            node.x = node.baseX + Math.cos(node.angle) * node.radius;
-            node.y = node.baseY + Math.sin(node.angle) * node.radius;
+            // Smooth circular motion around base position
+            node.angle = (node.angle + node.speed * 0.01) % (Math.PI * 2);
+            const targetX = node.baseX + Math.cos(node.angle) * (node.radius || 0);
+            const targetY = node.baseY + Math.sin(node.angle) * (node.radius || 0);
             
-            // Random movement
-            node.x += (Math.random() - 0.5) * 0.5;
-            node.y += (Math.random() - 0.5) * 0.5;
+            // Smooth movement towards target position
+            node.x += (targetX - node.x) * 0.1;
+            node.y += (targetY - node.y) * 0.1;
+            
+            // Add subtle random movement
+            node.x += (Math.random() - 0.5) * 0.3;
+            node.y += (Math.random() - 0.5) * 0.3;
             
             // Keep nodes within canvas bounds
             node.x = Math.max(0, Math.min(this.canvas.width, node.x));
@@ -231,7 +235,7 @@ class NodeGraph {
             const color = `rgb(${r}, ${g}, ${b})`;
             
             // Draw glow
-            const glowSize = 5 + (intensity * 25); // More intense glow for closer nodes
+            const glowSize = 2 + (intensity * 10); // Smaller, more subtle glow
             const gradient = this.ctx.createRadialGradient(
                 node.x, node.y, node.radius,
                 node.x, node.y, node.radius + glowSize
@@ -244,9 +248,9 @@ class NodeGraph {
             this.ctx.fillStyle = gradient;
             this.ctx.fill();
             
-            // Draw node
+            // Draw node - use size instead of radius for the actual node
             this.ctx.beginPath();
-            this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+            this.ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
             this.ctx.fillStyle = color;
             this.ctx.fill();
             
