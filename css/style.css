@@ -80,31 +80,26 @@ h1 .title-word {
     position: relative;
     white-space: nowrap;
     padding: 0 0.2em;
-    color: transparent; /* Hide the actual text */
-}
-
-h1 .title-word::before {
-    content: attr(data-text);
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
     background: linear-gradient(45deg, var(--accent-color), var(--accent-light));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    z-index: 1;
-    pointer-events: none;
+    color: transparent;
 }
 
+/* Apply animation to each letter */
 h1 .letter {
     display: inline-block;
     transform-origin: 50% 100%;
     animation: wave 2s infinite ease-in-out;
-    padding: 0.1em 0; /* Add padding to prevent clipping */
-    margin-top: -0.1em; /* Compensate for padding */
+    padding: 0.1em 0;
+    margin-top: -0.1em;
+    background: inherit;
+    -webkit-background-clip: inherit;
+    background-clip: inherit;
+    -webkit-text-fill-color: inherit;
 }
+
 
 /* Create staggered animation for each letter */
 h1 .letter:nth-child(1) { animation-delay: 0s; }

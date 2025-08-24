@@ -59,7 +59,9 @@ class NodeGraph {
                 speed: Math.random() * 0.2 + 0.1,
                 angle: Math.random() * Math.PI * 2,
                 radius: (Math.random() * 50) + 50,
-                color: `rgba(119, 194, 65, ${Math.random() * 0.3 + 0.2})`
+                color: Math.random() > 0.5 ? '#00ffff' : '#ff00ff', // Cyan or Magenta
+                pulseSpeed: Math.random() * 0.02 + 0.01,
+                pulsePhase: Math.random() * Math.PI * 2,
             });
         }
         
@@ -158,25 +160,52 @@ class NodeGraph {
             this.ctx.stroke();
         });
         
-        // Draw nodes with a subtle glow
+        // Draw nodes with pulsing colors
         this.nodes.forEach(node => {
-            // Glow effect
-            const gradient = this.ctx.createRadialGradient(
-                node.x, node.y, 0,
-                node.x, node.y, node.size * 3
-            );
-            gradient.addColorStop(0, 'rgba(160, 214, 122, 0.6)');
-            gradient.addColorStop(1, 'rgba(90, 154, 45, 0)');
+            // Update pulse phase
+            node.pulsePhase += node.pulseSpeed;
+            const pulseIntensity = (Math.sin(node.pulsePhase) + 1) / 2; // 0 to 1
             
+            // Alternate between cyan and magenta with pulsing opacity
+            const isCyan = node.color === '#00ffff';
+            const baseColor = isCyan ? 
+                { r: 0, g: 255, b: 255 } : 
+                { r: 255, g: 0, b: 255 };
+                
+            // Pulsing glow effect
+            const glowGradient = this.ctx.createRadialGradient(
+                node.x, node.y, 0,
+                node.x, node.y, node.size * 4
+            );
+            
+            glowGradient.addColorStop(0, `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${0.3 + pulseIntensity * 0.4})`);
+            glowGradient.addColorStop(1, `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, 0)`);
+            
+            // Draw glow
             this.ctx.beginPath();
-            this.ctx.arc(node.x, node.y, node.size * 3, 0, Math.PI * 2);
-            this.ctx.fillStyle = gradient;
+            this.ctx.arc(node.x, node.y, node.size * 4, 0, Math.PI * 2);
+            this.ctx.fillStyle = glowGradient;
             this.ctx.fill();
             
-            // Node core
+            // Node core with pulsing size and brightness
+            const coreSize = node.size * (0.8 + pulseIntensity * 0.4);
+            const brightness = 0.7 + pulseIntensity * 0.3;
+            
             this.ctx.beginPath();
-            this.ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#a0d67a';
+            this.ctx.arc(node.x, node.y, coreSize, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${brightness})`;
+            this.ctx.fill();
+            
+            // Add a small white highlight
+            this.ctx.beginPath();
+            this.ctx.arc(
+                node.x - coreSize * 0.5, 
+                node.y - coreSize * 0.5, 
+                coreSize * 0.3, 
+                0, 
+                Math.PI * 2
+            );
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             this.ctx.fill();
         });
     }
