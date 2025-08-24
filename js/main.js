@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update copyright year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
     
+    // Initialize statistics with config values
+    Object.entries(CONFIG.stats).forEach(([key, { target }]) => {
+        const element = document.getElementById(key);
+        if (element) element.textContent = '0';
+    });
+    
     // Animate stats counting
     animateStats();
     
@@ -32,11 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Animate statistics counting
 function animateStats() {
-    const statElements = {
-        linesOfCode: { target: 10000, duration: 2000, current: 0 },
-        projectsCount: { target: 5, duration: 1500, current: 0 },
-        contributors: { target: 10, duration: 1800, current: 0 }
-    };
+    // Create stat elements with current values from config
+    const statElements = Object.entries(CONFIG.stats).reduce((acc, [key, { target, duration }]) => {
+        acc[key] = { target, duration, current: 0 };
+        return acc;
+    }, {});
     
     const startAnimation = (elementId, target, duration) => {
         const element = document.getElementById(elementId);
