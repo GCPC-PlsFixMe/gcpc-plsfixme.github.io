@@ -143,10 +143,9 @@
         </footer>
     </div>
 
-    <div class="construction-alert" id="constructionAlert">
-        <button class="close-btn" id="closeAlert">&times;</button>
-        <h3><i class="fas fa-tools"></i> Under Construction</h3>
-        <p>We're currently building something amazing! Check back soon for updates.</p>
+    <div class="construction-alert" id="constructionAlert" style="display: none;">
+        <h3 id="constructionTitle"></h3>
+        <p id="constructionMessage"></p>
         <div class="tools">
             <i class="fas fa-code"></i>
             <i class="fas fa-cog fa-spin"></i>
@@ -169,15 +168,14 @@
     <script src="js/flappyNode.js"></script>
     <script src="js/main.js"></script>
     <script src="js/githubStats.js"></script>
+    <script src="js/config.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const closeButton = document.getElementById('closeAlert');
-            const alertBox = document.getElementById('constructionAlert');
-            
-            closeButton.addEventListener('click', function() {
-                alertBox.style.display = 'none';
-            });
-        });
+        console.log('Config loaded:', window.SITE_CONFIG);
+        // Make sure the config is not frozen
+        if (window.SITE_CONFIG) {
+            window.SITE_CONFIG = JSON.parse(JSON.stringify(window.SITE_CONFIG));
+        }
     </script>
+    <script src="js/constructionAlert.js"></script>
 </body>
 </html>
