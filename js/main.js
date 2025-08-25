@@ -2,23 +2,23 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Update copyright year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
-    
+
     // Initialize statistics with config values
     Object.entries(CONFIG.stats).forEach(([key, { target }]) => {
         const element = document.getElementById(key);
         if (element) element.textContent = '0';
     });
-    
+
     // Animate stats counting
     animateStats();
-    
+
     // Add smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
             const targetId = this.getAttribute('href');
             if (targetId === '#') return;
-            
+
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
                 window.scrollTo({
@@ -28,13 +28,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    
+
     // Add scroll animations
     setupScrollAnimations();
-    
+
     // Load projects dynamically (placeholder for future API integration)
     loadProjects();
+
+    // Secret code: ELEVATE
+    setupSecretCode();
 });
+
+// Secret code handling: ELEVATE -> illuminate tagline, flash, and open game
+function setupSecretCode() {
+    const TARGET = 'ELEVATE';
+    const tagline = document.getElementById('tagline');
+    if (!tagline) return;
+    const letters = Array.from(tagline.querySelectorAll('.tag-letter'));
+    if (letters.length !== TARGET.length) return;
+
+    let index = 0;
+
+    const clearActive = () => {
+        letters.forEach(el => el.classList.remove('active'));
+    };
+
+    const onKeyDown = (e) => {
+        // ignore if overlay/game is open
+        const overlay = document.getElementById('flappyNodeOverlay');
+        const isOpen = overlay && overlay.style.display !== 'none';
+        if (isOpen) return;
+
+        const key = e.key.toUpperCase();
+        const expected = TARGET[index];
+        if (key === expected) {
+            letters[index].classList.add('active');
+            index += 1;
+            if (index === TARGET.length) {
+                tagline.classList.add('flash');
+                setTimeout(() => tagline.classList.remove('flash'), 800);
+                index = 0;
+                openFlappyNode();
+                clearActive();
+            }
+        } else if (/^[A-Z]$/.test(key)) {
+            index = 0;
+            clearActive();
+        }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    // Wire the close button and FlappyNode exit hook
+    const closeBtn = document.getElementById('flappyClose');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeFlappyNode);
+    }
+    if (window.FlappyNode) {
+        window.FlappyNode.onRequestExit = closeFlappyNode;
+    }
+}
+
+function openFlappyNode() {
+    const overlay = document.getElementById('flappyNodeOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden', 'false');
+    if (window.FlappyNode && typeof window.FlappyNode.start === 'function') {
+        window.FlappyNode.start('flappyCanvas');
+        window.FlappyNode.onRequestExit = closeFlappyNode;
+    }
+}
+
+function closeFlappyNode() {
+    const overlay = document.getElementById('flappyNodeOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    if (window.FlappyNode && typeof window.FlappyNode.stop === 'function') {
+        window.FlappyNode.stop();
+    }
+}
 
 // Animate statistics counting
 function animateStats() {

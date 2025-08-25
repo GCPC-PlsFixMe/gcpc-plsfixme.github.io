@@ -11,6 +11,24 @@
     --transition: all 0.3s ease;
 }
 
+/* Tagline secret-code illumination */
+.tag-letters { display: inline-flex; gap: 0.1em; }
+.tag-letter { opacity: 0.35; transition: transform 0.15s ease, opacity 0.15s ease, text-shadow 0.15s ease; }
+.tag-letter.active {
+    opacity: 1;
+    transform: scale(1.15);
+    text-shadow: 0 0 8px #a0d67a, 0 0 16px #77c241;
+}
+.tagline.flash {
+    animation: taglineFlash 700ms ease-in-out 1;
+}
+@keyframes taglineFlash {
+    0% { filter: brightness(1); }
+    30% { filter: brightness(2); }
+    60% { filter: brightness(0.9); }
+    100% { filter: brightness(1); }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -587,4 +605,61 @@ footer {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-color);
+}
+
+/* --- Flappy Node Overlay (appended) --- */
+.flappy-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  padding: 1rem;
+}
+.flappy-header {
+  width: min(100%, 900px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.25rem 0 0.5rem 0;
+}
+.flappy-header h3 {
+  margin: 0;
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0,255,255,0.6);
+  font-family: 'Orbitron', sans-serif;
+}
+.flappy-close {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.flappy-close:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #00ffff;
+  color: #00ffff;
+}
+#flappyCanvas {
+  width: min(100%, 900px);
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border: 1px solid rgba(0,255,255,0.3);
+  box-shadow: 0 0 20px rgba(0,255,255,0.2);
+  background: #121212;
+}
+.flappy-hint {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  font-family: 'Share Tech Mono', monospace;
 }

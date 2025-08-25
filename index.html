@@ -34,7 +34,18 @@
                     <span class="letter">b</span>
                 </span>
             </h1>
-            <p class="tagline">#ELEVATE</p>
+            <p class="tagline" id="tagline">
+                <span class="tag-hash">#</span>
+                <span class="tag-letters" aria-label="ELEVATE">
+                    <span class="tag-letter" data-letter="E">E</span>
+                    <span class="tag-letter" data-letter="L">L</span>
+                    <span class="tag-letter" data-letter="E">E</span>
+                    <span class="tag-letter" data-letter="V">V</span>
+                    <span class="tag-letter" data-letter="A">A</span>
+                    <span class="tag-letter" data-letter="T">T</span>
+                    <span class="tag-letter" data-letter="E">E</span>
+                </span>
+            </p>
         </header>
 
         <main>
@@ -138,8 +149,19 @@
         </div>
     </div>
 
+    <!-- Flappy Node Game Overlay -->
+    <div id="flappyNodeOverlay" class="flappy-overlay" aria-hidden="true" style="display:none;">
+        <div class="flappy-header">
+            <h3>Flappy Node</h3>
+            <button id="flappyClose" class="flappy-close" aria-label="Close Flappy Node">&times;</button>
+        </div>
+        <canvas id="flappyCanvas" width="800" height="600"></canvas>
+        <div class="flappy-hint">Press Space to flap • Esc to exit</div>
+    </div>
+
     <script src="js/nodeGraph.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/flappyNode.js"></script>
     <script src="js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
