@@ -3,14 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update copyright year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-    // Initialize statistics with config values
-    Object.entries(CONFIG.stats).forEach(([key, { target }]) => {
-        const element = document.getElementById(key);
+    // Initialize statistics with zeros
+    ['linesOfCode', 'projectsCount', 'contributors'].forEach(id => {
+        const element = document.getElementById(id);
         if (element) element.textContent = '0';
     });
-
-    // Animate stats counting
-    animateStats();
 
     // Add smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -126,58 +123,11 @@ function showUnlockToast(text = 'UNLOCKED') {
     }, 950);
 }
 
-// Animate statistics counting
+// Animate statistics counting (now handled by githubStats.js)
+// This function is kept for backward compatibility
 function animateStats() {
-    // Create stat elements with current values from config
-    const statElements = Object.entries(CONFIG.stats).reduce((acc, [key, { target, duration }]) => {
-        acc[key] = { target, duration, current: 0 };
-        return acc;
-    }, {});
-    
-    const startAnimation = (elementId, target, duration) => {
-        const element = document.getElementById(elementId);
-        if (!element) return;
-        
-        const startTime = performance.now();
-        const startValue = 0;
-        const endValue = target;
-        
-        const updateCounter = (currentTime) => {
-            const elapsedTime = currentTime - startTime;
-            const progress = Math.min(elapsedTime / duration, 1);
-            
-            // Easing function for smooth animation
-            const easeOutQuad = t => t * (2 - t);
-            const currentValue = Math.floor(easeOutQuad(progress) * endValue);
-            
-            element.textContent = currentValue.toLocaleString();
-            
-            if (progress < 1) {
-                requestAnimationFrame(updateCounter);
-            } else {
-                element.textContent = endValue.toLocaleString();
-            }
-        };
-        
-        requestAnimationFrame(updateCounter);
-    };
-    
-    // Start animations when stats are in viewport
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                Object.entries(statElements).forEach(([id, { target, duration }]) => {
-                    startAnimation(id, target, duration);
-                });
-                observer.disconnect();
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    const statsSection = document.querySelector('.stats');
-    if (statsSection) {
-        observer.observe(statsSection);
-    }
+    // No-op as stats are now handled by githubStats.js
+    return;
 }
 
 // Setup scroll animations for sections

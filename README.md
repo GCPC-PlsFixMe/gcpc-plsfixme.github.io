@@ -38,8 +38,8 @@
 │  ├─ style.css            # Site styles, neon theme, animations
 │  └─ construction.css     # Optional/legacy styles
 ├─ js/
-│  ├─ config.js            # Site configuration (stats targets, durations, etc.)
-│  ├─ main.js              # Page behavior: stats, scrolling, observers, helpers
+│  ├─ main.js              # Page behavior, scrolling, observers, and helpers
+│  ├─ githubStats.js       # Fetches and displays GitHub statistics
 │  ├─ nodeGraph.js         # Animated node/line background renderer
 │  └─ flappyNode.js        # Mini interactive canvas experience (requires elevation)
 ├─ index.html              # Homepage
@@ -73,10 +73,9 @@ Since the site is static, you can develop locally without a build step.
 
 ## ⚙️ Configuration
 
-Site-wide values, such as statistics targets and animation durations, are located in `js/config.js`.
-
-- **📊 Stats Animation**: `CONFIG.stats` maps counters to their target values and durations.
-- **⏱️ Timing & Easing**: Smooth, visually pleasing transitions are handled in `js/main.js` (see `animateStats()` and `setupScrollAnimations()`).
+- **📊 GitHub Statistics**: Statistics are automatically fetched from the GitHub API in `js/githubStats.js`
+- **🎨 Styling**: Visual styles and animations are defined in `css/style.css`
+- **🔄 Dynamic Content**: Main page behavior is handled in `js/main.js`
 
 ---
 
