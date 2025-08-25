@@ -2,7 +2,7 @@
 
 # 🌐 PlsFixMe Gitsite 🌐
 
-**A modern, responsive GitHub Pages site for GCPC, showcasing projects, documents, and experiments with a stunning neon, node-graph aesthetic. Built with vanilla HTML, CSS, and JavaScript for smooth, performant interactions.**
+**A modern, responsive GitHub Pages site for GCPC GitHub sharing, showcasing projects, documents, and experiments with a stunning neon, node-graph aesthetic. Built with vanilla HTML, CSS, and JavaScript for smooth, performant interactions.**
 
 <br>
 
