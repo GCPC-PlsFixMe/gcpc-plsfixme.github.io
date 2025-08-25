@@ -3,11 +3,15 @@
 (function(){
   const FlappyNode = {};
   let canvas, ctx, running = false, rafId = null;
+  let paused = false;
   let lastTime = 0;
   let nodes = []; // background nodes (neon graph vibe)
   let lines = [];
   let player, gravity, pipes, pipeTimer, score, bestScore = 0;
   let keyDownHandler, pointerHandler;
+  let particles = [];
+  let explosionActive = false;
+  let explosionTimer = 0;
 
   const COLORS = {
     bg: '#121212',
@@ -17,6 +21,7 @@
     player: '#ff00ff',
     pipe: '#00ffff',
     text: '#e0e0e0',
+    explosion: 'rgba(255,165,0,', // neon orange base, alpha appended dynamically
   };
 
   function initBackground() {
@@ -102,6 +107,9 @@
     pipes = [];
     pipeTimer = 0;
     score = 0;
+    particles = [];
+    explosionActive = false;
+    explosionTimer = 0;
   }
 
   function spawnPipe() {
@@ -137,14 +145,14 @@
 
     // collisions
     if (player.y - player.r < 0 || player.y + player.r > canvas.height) {
-      gameOver();
+      triggerExplosion(player.x, Math.max(0, Math.min(canvas.height, player.y)));
       return;
     }
     for (const p of pipes) {
       const inX = player.x + player.r > p.x && player.x - player.r < p.x + p.w;
       const inGap = player.y - player.r > p.gapY && player.y + player.r < p.gapY + p.gapH;
       if (inX && !inGap) {
-        gameOver();
+        triggerExplosion(player.x, player.y);
         return;
       }
     }
@@ -182,6 +190,67 @@
     ctx.fillText(`Best: ${bestScore}`, canvas.width - 16, 28);
   }
 
+  // --- Explosion Particles ---
+  function triggerExplosion(x, y) {
+    if (explosionActive) return;
+    explosionActive = true;
+    explosionTimer = 0.6; // seconds
+    particles = [];
+    const count = 50;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 200 + Math.random() * 300; // px/s
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0.6 + Math.random() * 0.2,
+        age: 0,
+        size: 2 + Math.random() * 3,
+      });
+    }
+  }
+
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      // slight gravity pull
+      p.vy += 800 * dt;
+      if (p.age >= p.life) particles.splice(i, 1);
+    }
+  }
+
+  function drawParticles() {
+    particles.forEach(p => {
+      const alpha = Math.max(0, 1 - p.age / p.life);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.explosion + (0.4 + 0.6 * alpha) + ')';
+      ctx.shadowColor = 'rgba(255,165,0,0.9)';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function drawStartOverlay() {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ffff';
+    ctx.textAlign = 'center';
+    ctx.font = '28px "Share Tech Mono", monospace';
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 10;
+    ctx.fillText('FLAPPY NODE', canvas.width/2, canvas.height/2 - 20);
+    ctx.font = '16px "Share Tech Mono", monospace';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fillText('Press Space or Click to Start', canvas.width/2, canvas.height/2 + 16);
+  }
+
   function flap() {
     // give an upward impulse
     player.vy = -420;
@@ -196,8 +265,25 @@
     updateBackground(dt * 60); // scale to keep background lively
     drawBackground();
 
-    updateGame(dt);
-    drawGame();
+    if (!paused && !explosionActive) {
+      updateGame(dt);
+      drawGame();
+    } else if (paused) {
+      // draw initial scene (player already reset in start())
+      drawGame();
+      drawStartOverlay();
+    } else if (explosionActive) {
+      // Freeze gameplay; animate explosion
+      drawGame();
+      updateParticles(dt);
+      drawParticles();
+      explosionTimer -= dt;
+      if (explosionTimer <= 0 || particles.length === 0) {
+        explosionActive = false;
+        gameOver();
+        return;
+      }
+    }
 
     rafId = requestAnimationFrame(loop);
   }
@@ -206,14 +292,27 @@
     if (!running) return;
     if (e.code === 'Space') {
       e.preventDefault();
-      flap();
+      if (paused) {
+        paused = false;
+        flap();
+      } else if (!explosionActive) {
+        flap();
+      }
     } else if (e.code === 'Escape') {
       // allow host page to close overlay
       if (typeof FlappyNode.onRequestExit === 'function') FlappyNode.onRequestExit();
     }
   }
 
-  function onPointer() { flap(); }
+  function onPointer() {
+    if (!running) return;
+    if (paused) {
+      paused = false;
+      flap();
+    } else if (!explosionActive) {
+      flap();
+    }
+  }
 
   function gameOver() {
     // Show quick flash effect by briefly stopping then resetting
@@ -259,6 +358,7 @@
     if (!canvas) return;
     ctx = canvas.getContext('2d');
     running = true;
+    paused = true;
     lastTime = 0;
 
     resizeCanvas();

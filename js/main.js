@@ -68,7 +68,11 @@ function setupSecretCode() {
                 tagline.classList.add('flash');
                 setTimeout(() => tagline.classList.remove('flash'), 800);
                 index = 0;
-                openFlappyNode();
+                // Show quick unlock toast, then open overlay
+                showUnlockToast('UNLOCKED');
+                setTimeout(() => {
+                    openFlappyNode();
+                }, 650);
                 clearActive();
             }
         } else if (/^[A-Z]$/.test(key)) {
@@ -108,6 +112,18 @@ function closeFlappyNode() {
     if (window.FlappyNode && typeof window.FlappyNode.stop === 'function') {
         window.FlappyNode.stop();
     }
+}
+
+// Create and briefly show a neon unlock toast at center-top
+function showUnlockToast(text = 'UNLOCKED') {
+    const el = document.createElement('div');
+    el.className = 'unlock-toast';
+    el.textContent = text;
+    document.body.appendChild(el);
+    // Remove after animation
+    setTimeout(() => {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+    }, 950);
 }
 
 // Animate statistics counting
