@@ -66,6 +66,9 @@ function setupSecretCode() {
                 setTimeout(() => tagline.classList.remove('flash'), 800);
                 index = 0;
                 // Show quick unlock toast, then open overlay
+                // Swap the tagline symbol from $ to # upon unlock
+                const tagHash = tagline.querySelector('.tag-hash');
+                if (tagHash) tagHash.textContent = '#';
                 showUnlockToast('UNLOCKED');
                 setTimeout(() => {
                     openFlappyNode();
