@@ -280,8 +280,8 @@ h1 .heart {
 
 /* Documents Section */
 .documents .content-box {
-    border: 1px solid #ff00ff;
-    box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+    border: 1px solid #FFA500;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
 }
 
 .documents h2::after {
@@ -312,13 +312,13 @@ h1 .heart {
     padding: 1.5rem;
     text-align: center;
     transition: var(--transition);
-    border: 1px solid rgba(0, 255, 255, 0.2);
+    border: 1px solid rgba(255, 165, 0, 0.2);
 }
 
 .document-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    border-color: #ff00ff;
+    border-color: #FFA500;
 }
 
 .experiment-card:hover {
@@ -330,7 +330,7 @@ h1 .heart {
 .document-card i {
     font-size: 2rem;
     margin-bottom: 1rem;
-    color: #ff00ff; /* Magenta for Documents section */
+    color: #FFA500; /* Orange for Documents section */
     transition: var(--transition);
 }
 
@@ -447,7 +447,10 @@ h1 .heart {
     background: linear-gradient(90deg, #00ffff, #00cccc);
 }
 
-.documents h2::after,
+.documents h2::after {
+    background: linear-gradient(90deg, #FFA500, #CC8400);
+}
+
 .rabbit-hole h2::after {
     background: linear-gradient(90deg, #ff00ff, #cc00cc);
 }
