@@ -1,22 +1,32 @@
-# GCPC Website
+<div align="center">
 
-Modern, responsive GitHub Pages site for GCPC. The site showcases projects, documents, and experiments with a neon, node-graph aesthetic and smooth, performant interactions — all implemented in vanilla HTML/CSS/JS.
+# 🌐 GCPC Website 🌐
 
-## Features
+**A modern, responsive GitHub Pages site for GCPC, showcasing projects, documents, and experiments with a stunning neon, node-graph aesthetic. Built with vanilla HTML, CSS, and JavaScript for smooth, performant interactions.**
 
-- __Responsive layout__: Scales elegantly across desktop and mobile.
-- __Neon node background__: Animated canvas background inspired by connected node graphs.
-- __Smooth interactions__: IntersectionObserver animations, eased stat counters, and silky scrolling.
-- __Content sections__: Projects, Documents, Rabbit Hole (experiments), and About.
-- __Accessibility considerations__: Color contrast, keyboard support, and reduced motion friendliness.
+</div>
 
-## Tech Stack
+---
 
-- __Hosting__: GitHub Pages
-- __Languages__: HTML5, CSS3, JavaScript (vanilla)
-- __No frameworks required__: Lightweight and dependency‑free
+## ✨ Features
 
-## Project Structure
+- **📱 Responsive Layout**: Scales elegantly across desktop and mobile devices.
+- **🎨 Neon Node Background**: An animated canvas background inspired by connected node graphs.
+- **🚀 Smooth Interactions**: Features IntersectionObserver animations, eased stat counters, and silky scrolling.
+- **📂 Content Sections**: Includes Projects, Documents, Rabbit Hole (experiments), and About sections.
+- **♿ Accessibility**: Designed with color contrast, keyboard support, and reduced motion friendliness in mind.
+
+---
+
+## 🛠️ Tech Stack
+
+- **🌐 Hosting**: GitHub Pages
+- **💻 Languages**: HTML5, CSS3, JavaScript (vanilla)
+- **✅ No Frameworks Required**: Lightweight and dependency-free.
+
+---
+
+## 📂 Project Structure
 
 ```
 .
@@ -33,56 +43,68 @@ Modern, responsive GitHub Pages site for GCPC. The site showcases projects, docu
 └─ README.md               # This file
 ```
 
-## Local Development
+---
 
-Because the site is static, you can develop locally without a build step.
+## 🚀 Local Development
 
-1) __Clone__ the repository.
-2) __Serve__ the folder with a simple static server (recommended to avoid file:// CORS quirks):
+Since the site is static, you can develop locally without a build step.
 
-- Python
-  ```bash
-  python -m http.server 8080
-  ```
-- Node (if installed)
-  ```bash
-  npx serve -p 8080
-  ```
+1.  **Clone the repository.**
+2.  **Serve the folder** with a simple static server to avoid `file://` CORS quirks:
 
-3) Visit http://localhost:8080 and iterate.
+    - **Python**
+      ```bash
+      python -m http.server 8080
+      ```
+    - **Node (if installed)**
+      ```bash
+      npx serve -p 8080
+      ```
 
-Alternatively, opening `index.html` directly in a browser works for most features.
+3.  **Visit `http://localhost:8080`** and start iterating.
 
-## Configuration
+> **Note**: Opening `index.html` directly in a browser works for most features.
 
-Site‑wide values (like statistics targets and animation durations) live in `js/config.js`.
+---
 
-- __Stats animation__: `CONFIG.stats` maps counters to their target values and durations.
-- __Timing & easing__: Smooth, visually pleasing transitions are handled in `js/main.js` (see `animateStats()` and `setupScrollAnimations()`).
+## ⚙️ Configuration
 
-## Visuals: Node Graph
+Site-wide values, such as statistics targets and animation durations, are located in `js/config.js`.
 
-The animated background is implemented in `js/nodeGraph.js` using the Canvas 2D API. Nodes drift subtly and connect with lines whose opacity varies by distance, producing a calm neon network feel.
+- **📊 Stats Animation**: `CONFIG.stats` maps counters to their target values and durations.
+- **⏱️ Timing & Easing**: Smooth, visually pleasing transitions are handled in `js/main.js` (see `animateStats()` and `setupScrollAnimations()`).
 
-Key choices:
-- __Performance__: Batches of lightweight draw calls, tuned node count based on canvas area.
-- __Aesthetic__: Cyan/magenta nodes, faint connecting lines, and gentle motion.
+---
 
-## Accessibility & UX
+## 🎨 Visuals: Node Graph
 
-- __Keyboard support__: Core interactions do not require a mouse.
-- __Color/contrast__: Dark theme with neon accents; text remains readable.
-- __Reduced motion__: Animations are modest; please open an issue if you need further accommodations.
+The animated background is implemented in `js/nodeGraph.js` using the Canvas 2D API. Nodes drift subtly and connect with lines whose opacity varies by distance, creating a calm, neon network feel.
 
-## Deployment
+- **⚡ Performance**: Utilizes batches of lightweight draw calls and a tuned node count based on canvas area.
+- **🖌️ Aesthetic**: Features cyan/magenta nodes, faint connecting lines, and gentle motion.
 
-This repository is configured for GitHub Pages. Pushes to the main branch update the site automatically. If you fork this project, enable Pages in your repo settings and point it to the appropriate branch.
+---
 
-## Contributing
+## ♿ Accessibility & UX
 
-Issues and PRs are welcome. Please keep contributions lightweight, dependency‑free, and aligned with the existing aesthetic. For larger changes, open an issue to discuss first.
+- **⌨️ Keyboard Support**: Core interactions do not require a mouse.
+- **🌈 Color/Contrast**: A dark theme with neon accents ensures text remains readable.
+- **🏃‍♂️ Reduced Motion**: Animations are modest. Please open an issue if you need further accommodations.
 
-## License
+---
 
-See `LICENSE` for details.
+## 🚀 Deployment
 
+This repository is configured for GitHub Pages. Pushes to the `main` branch will automatically update the site. If you fork this project, enable Pages in your repository settings and point it to the appropriate branch.
+
+---
+
+## 🤝 Contributing
+
+Issues and PRs are welcome! Please keep contributions lightweight, dependency-free, and aligned with the existing aesthetic. For larger changes, please open an issue to discuss first.
+
+---
+
+## 📜 License
+
+See the `LICENSE` file for details.
