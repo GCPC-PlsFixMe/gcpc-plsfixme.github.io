@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connectivity Guide: Wi-Fi Calling & Secure Messaging</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import and dark mode application */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Style for steps in the lists */
+        li span {
+            font-weight: 600;
+            color: #4ade80; /* Tailwind green-400 for contrast */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 sm:p-6 min-h-screen">
+
+    <div class="max-w-3xl mx-auto space-y-8">
+
+        <!-- Header -->
+        <header class="text-center pb-4">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-2">
+                The Connectivity Lifeline
+            </h1>
+            <p class="text-xl text-green-400">
+                Wi-Fi Calling & Secure Messaging Guide
+            </p>
+        </header>
+
+        <!-- Section 1: Wi-Fi Calling -->
+        <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+            <h2 class="text-3xl font-bold mb-4 text-green-400">1. Enable Wi-Fi Calling</h2>
+            <p class="mb-6 text-gray-300">
+                Wi-Fi Calling lets your phone use a Wi-Fi network (like your home or a coffee shop) to make and receive calls and texts, even if you have zero cell signal.
+                <em class="block mt-2 italic text-sm text-gray-400">Note: Your carrier must support this feature, and you may need to confirm your E911 emergency address during setup.</em>
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- iOS Instructions -->
+                <div class="bg-gray-700 p-5 rounded-lg border-l-4 border-green-500">
+                    <h3 class="text-xl font-bold mb-3 text-white">For iPhone (iOS)</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-200">
+                        <li>Go to <span>Settings</span>.</li>
+                        <li>Tap <span>Cellular</span> (or <span>Phone</span> on some older versions).</li>
+                        <li>Tap <span>Wi-Fi Calling</span>.</li>
+                        <li>Toggle the switch for <span>"Wi-Fi Calling on This iPhone"</span> to ON.</li>
+                        <li>Follow the prompts to enter or verify your <span>E911 address</span>.</li>
+                    </ol>
+                </div>
+
+                <!-- Android Instructions -->
+                <div class="bg-gray-700 p-5 rounded-lg border-l-4 border-green-500">
+                    <h3 class="text-xl font-bold mb-3 text-white">For Android</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-200">
+                        <li>Go to <span>Settings</span>.</li>
+                        <li>Search for "Wi-Fi Calling" or navigate to <span>Connections</span> (or <span>Network & Internet</span> > <span>Mobile Network</span>).</li>
+                        <li>Tap <span>Wi-Fi Calling</span>.</li>
+                        <li>Toggle the feature <span>ON</span>.</li>
+                        <li>If prompted, <span>confirm your address</span> for emergency services.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Recommended Messaging Apps -->
+        <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+            <h2 class="text-3xl font-bold mb-4 text-green-400">2. Best Wi-Fi Messaging Apps</h2>
+            <p class="mb-6 text-gray-300">
+                These apps use **data** (Wi-Fi or cellular) for all communication, making them immune to cellular dead zones. They also feature End-to-End Encryption (E2EE) for better security and privacy.
+            </p>
+
+            <div class="space-y-4">
+                <!-- App Card: Signal -->
+                <div class="p-4 bg-gray-700 rounded-lg">
+                    <h3 class="text-xl font-bold text-white mb-1 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293a1 1 0 00-1.414-1.414L9 10.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        Signal Private Messenger
+                    </h3>
+                    <p class="text-sm text-gray-300 font-semibold mb-2">Best for: Max Privacy & Security (Free)</p>
+                    <ul class="list-disc list-outside ml-5 text-gray-400 text-sm">
+                        <li>**Gold Standard:** Uses the industry-leading Signal Protocol for E2EE.</li>
+                        <li>**Zero Metadata:** Collects virtually no user metadata.</li>
+                        <li>**Features:** Text, voice, video calls, disappearing messages.</li>
+                    </ul>
+                </div>
+
+                <!-- App Card: WhatsApp -->
+                <div class="p-4 bg-gray-700 rounded-lg">
+                    <h3 class="text-xl font-bold text-white mb-1 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a8 8 0 00-8 8c0 2.03.62 3.93 1.7 5.4l-.8 3.2 3.2-.8A7.96 7.96 0 0010 18a8 8 0 000-16zm-1 4a1 1 0 112 0 1 1 0 01-2 0zm1 10a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                        WhatsApp
+                    </h3>
+                    <p class="text-sm text-gray-300 font-semibold mb-2">Best for: Mass Adoption (Free)</p>
+                    <ul class="list-disc list-outside ml-5 text-gray-400 text-sm">
+                        <li>**User Base:** The most widely used app, meaning all your contacts are likely on it.</li>
+                        <li>**Encryption:** Also uses the Signal Protocol for E2EE by default on all messages and calls.</li>
+                        <li>**Trade-off:** Owned by Meta (Facebook) and collects more *metadata* than Signal.</li>
+                    </ul>
+                </div>
+
+                <!-- App Card: Threema -->
+                <div class="p-4 bg-gray-700 rounded-lg">
+                    <h3 class="text-xl font-bold text-white mb-1 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                        Threema
+                    </h3>
+                    <p class="text-sm text-gray-300 font-semibold mb-2">Best for: Anonymity (Paid)</p>
+                    <ul class="list-disc list-outside ml-5 text-gray-400 text-sm">
+                        <li>**Extreme Privacy:** Does not require a phone number or email to sign up (uses a unique ID).</li>
+                        <li>**Open-Source:** Provides transparency for security experts.</li>
+                        <li>**Model:** Paid app, which means its business model isn't based on selling user data.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer / Tips -->
+        <footer class="text-center pt-4 text-gray-500 text-sm">
+            <p>&mdash; Connectivity Tip &mdash;</p>
+            <p class="italic">Always ensure your phone's software is updated for the most reliable Wi-Fi calling performance.</p>
+        </footer>
+
+    </div>
+</body>
+</html>
+
