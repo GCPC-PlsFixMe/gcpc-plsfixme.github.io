@@ -680,59 +680,270 @@ footer {
     background: var(--accent-color);
 }
 
-/* --- Flappy Node Overlay (appended) --- */
-.flappy-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-  padding: 1rem;
+/* Connectivity Guide Section */
+.connectivity-guide {
+    margin: 4rem 0;
 }
-.flappy-header {
-  width: min(100%, 900px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0.25rem 0 0.5rem 0;
+
+.connectivity-guide .content-box {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    margin-top: 1.5rem;
+    border: 1px solid #77c241;
+    box-shadow: 0 0 10px rgba(119, 194, 65, 0.3);
 }
-.flappy-header h3 {
-  margin: 0;
-  color: #00ffff;
-  text-shadow: 0 0 8px rgba(0,255,255,0.6);
-  font-family: 'Orbitron', sans-serif;
+
+.connectivity-guide h2 {
+    margin-bottom: 1.5rem;
+    color: white;
+    position: relative;
+    display: inline-block;
 }
-.flappy-close {
-  background: transparent;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 6px;
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
-  cursor: pointer;
-  transition: var(--transition);
+
+.connectivity-guide h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, #77c241, #5a9a2e);
+    border-radius: 3px;
 }
-.flappy-close:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: #00ffff;
-  color: #00ffff;
+
+/* Section Titles and Descriptions */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 2rem 0 1rem 0;
+    color: #77c241;
+    border-left: 4px solid #77c241;
+    padding-left: 1rem;
 }
-#flappyCanvas {
-  width: min(100%, 900px);
-  height: auto;
-  aspect-ratio: 4 / 3;
-  border: 1px solid rgba(0,255,255,0.3);
-  box-shadow: 0 0 20px rgba(0,255,255,0.2);
-  background: #121212;
+
+.section-description {
+    color: #ccc;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
 }
-.flappy-hint {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #aaa;
-  font-family: 'Share Tech Mono', monospace;
+
+.note {
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+}
+
+/* Instructions Grid */
+.instructions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.instruction-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid rgba(119, 194, 65, 0.2);
+    transition: var(--transition);
+}
+
+.instruction-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #77c241;
+}
+
+.instruction-card h4 {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.instruction-list {
+    list-style: decimal inside;
+    padding-left: 0;
+}
+
+.instruction-list li {
+    margin: 0.5rem 0;
+    color: #ddd;
+    padding-left: 0.5rem;
+}
+
+.highlight {
+    color: #77c241;
+    font-weight: 600;
+}
+
+/* iOS and Android specific styling */
+.ios-card {
+    border-left: 4px solid #007AFF;
+}
+
+.android-card {
+    border-left: 4px solid #3DDC84;
+}
+
+.ios-card h4 {
+    color: #007AFF;
+}
+
+.android-card h4 {
+    color: #3DDC84;
+}
+
+/* App Grid */
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.app-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid rgba(119, 194, 65, 0.2);
+    transition: var(--transition);
+}
+
+.app-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-color: #77c241;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.app-header i {
+    font-size: 1.5rem;
+    color: #77c241;
+}
+
+.app-header h4 {
+    color: white;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.app-subtitle {
+    color: #77c241;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.app-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.app-features li {
+    margin: 0.5rem 0;
+    color: #ddd;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.app-features strong {
+    color: #77c241;
+}
+
+/* App-specific colors */
+.signal-card .app-header i {
+    color: #3a76f0;
+}
+
+.signal-card .app-header h4 {
+    color: #3a76f0;
+}
+
+.whatsapp-card .app-header i {
+    color: #25d366;
+}
+
+.whatsapp-card .app-header h4 {
+    color: #25d366;
+}
+
+.threema-card .app-header i {
+    color: #ff6600;
+}
+
+.threema-card .app-header h4 {
+    color: #ff6600;
+}
+
+/* Connectivity Footer */
+.connectivity-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(119, 194, 65, 0.2);
+    text-align: center;
+}
+
+.connectivity-tip p {
+    margin: 0.5rem 0;
+    color: #ccc;
+}
+
+.connectivity-tip strong {
+    color: #77c241;
+    font-size: 1.1rem;
+}
+
+.tip-text {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #aaa !important;
+}
+
+/* Main Footer */
+.main-footer {
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design for Connectivity Guide */
+@media (max-width: 768px) {
+    .instructions-grid,
+    .app-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .connectivity-guide .content-box {
+        padding: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        margin: 1.5rem 0 0.8rem 0;
+    }
+
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .app-header i {
+        font-size: 1.2rem;
+    }
 }
