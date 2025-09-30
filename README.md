@@ -35,29 +35,8 @@
 ```
 .
 ├─ css/
-│  ├─ base/                # Base styles and resets
-│  │  ├─ _reset.css        # CSS resets and base element styles
-│  │  ├─ _typography.css   # Typography and text styles
-│  │  └─ _variables.css    # CSS custom properties and variables
-│  │
-│  ├─ components/          # Reusable UI components
-│  │  ├─ _buttons.css      # Button styles and variations
-│  │  ├─ _cards.css        # Card components and layouts
-│  │  └─ _forms.css        # Form elements and inputs
-│  │
-│  ├─ layout/              # Layout-specific styles
-│  │  ├─ _footer.css       # Footer styles
-│  │  ├─ _grid.css         # Grid system and utilities
-│  │  └─ _header.css       # Header and navigation
-│  │
-│  ├─ themes/              # Theme and animation styles
-│  │  └─ _animations.css   # Keyframe animations and transitions
-│  │
-│  ├─ utilities/           # Helper classes and utilities
-│  │  └─ _helpers.css      # Utility classes for layout and spacing
-│  │
-│  ├─ main.css             # Main stylesheet (imports all others)
-│  └─ construction.css     # Temporary construction notice styles
+│  ├─ style.css            # Site styles, neon theme, animations
+│  └─ construction.css     # Optional/legacy styles
 ├─ js/
 │  ├─ main.js              # Page behavior, scrolling, observers, and helpers
 │  ├─ githubStats.js       # Fetches and displays GitHub statistics
@@ -66,44 +45,27 @@
 ├─ index.html              # Homepage
 ├─ LICENSE                 # License
 └─ README.md               # This file
+```
 
-## 🎨 CSS Architecture
+---
 
-The project uses a modular CSS architecture following the ITCSS methodology:
+## 🚀 Local Development
 
-1. **Base** - Reset, typography, and variables
-2. **Components** - Reusable UI components
-3. **Layout** - Page layout and grid systems
-4. **Themes** - Visual theming and animations
-5. **Utilities** - Helper classes and overrides
+Since the site is static, you can develop locally without a build step.
 
-### Adding New Styles
+1.  **Clone the repository.**
+2.  **Serve the folder** with a simple static server to avoid `file://` CORS quirks:
 
-1. **For new components**:
-   - Create a new file in `css/components/` (e.g., `_alerts.css`)
-   - Use BEM naming convention for class names
-   - Import the file in `main.css`
+    - **Python**
+      ```bash
+      python -m http.server 8080
+      ```
+    - **Node (if installed)**
+      ```bash
+      npx serve -p 8080
+      ```
 
-2. **For layout changes**:
-   - Modify or create new files in `css/layout/`
-   - Use the grid system and utility classes when possible
-
-3. **For theming**:
-   - Add new variables to `_variables.css`
-   - Create animation keyframes in `_animations.css`
-
-## 🚀 Getting Started
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/GCPC-PlsFixMe/gcpc-plsfixme.github.io.git
-   cd gcpc-plsfixme.github.io
-   ```
-
-2. **Development**
-   - Open `index.html` in your browser
-   - No build step required for development
-   - For production, consider minifying and combining CSS files
+3.  **Visit `http://localhost:8080`** and start iterating.
 
 > **Note**: Opening `index.html` directly in a browser works for most features.
 
@@ -112,7 +74,7 @@ The project uses a modular CSS architecture following the ITCSS methodology:
 ## ⚙️ Configuration
 
 - **📊 GitHub Statistics**: Statistics are automatically fetched from the GitHub API in `js/githubStats.js`
-- **🎨 Styling**: Visual styles and animations are organized in the modular CSS architecture in the `css/` directory
+- **🎨 Styling**: Visual styles and animations are defined in `css/style.css`
 - **🔄 Dynamic Content**: Main page behavior is handled in `js/main.js`
 
 ---
