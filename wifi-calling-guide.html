@@ -131,17 +131,8 @@
             </section>
         </main>
 
-        <footer class="main-footer">
-            <div class="social-links">
-                <a href="https://gcpc.plsfix.me" target="_blank" rel="noopener noreferrer" title="Home">
-                    <i class="fas fa-home"></i>
-                </a>
-                <a href="https://github.com/GCPC-PlsFixMe" target="_blank" rel="noopener noreferrer" title="GitHub">
-                    <i class="fab fa-github"></i>
-                </a>
-            </div>
-            <p>&copy; <span id="currentYear"></span> GCPC. All rights reserved.</p>
-        </footer>
+        <!-- Footer will be generated dynamically by JavaScript -->
+        <div id="footer-placeholder"></div>
     </div>
 
     <div class="construction-alert" id="constructionAlert" style="display: none;">
@@ -176,6 +167,14 @@
         if (window.SITE_CONFIG) {
             window.SITE_CONFIG = JSON.parse(JSON.stringify(window.SITE_CONFIG));
         }
+
+        // Generate and insert the footer
+        document.addEventListener('DOMContentLoaded', function() {
+            const footerPlaceholder = document.getElementById('footer-placeholder');
+            if (footerPlaceholder && window.generateFooter) {
+                footerPlaceholder.innerHTML = window.generateFooter();
+            }
+        });
     </script>
     <script src="js/constructionAlert.js"></script>
 </body>
