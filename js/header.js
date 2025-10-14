@@ -39,6 +39,27 @@
                     <span class="tag-letter" data-letter="E">E</span>
                 </span>
             </p>
+            
+            <nav class="main-nav">
+                <div class="nav-container">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="guides.html" class="nav-link">
+                        <i class="fas fa-book"></i>
+                        <span>Guides</span>
+                    </a>
+                    <a href="index.html#about" class="nav-link">
+                        <i class="fas fa-info-circle"></i>
+                        <span>About</span>
+                    </a>
+                    <a href="https://github.com/GCPC-PlsFixMe" class="nav-link" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </nav>
         </header>
     `;
 

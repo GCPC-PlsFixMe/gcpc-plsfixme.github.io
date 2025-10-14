@@ -1,6 +1,6 @@
 // GitHub Stats for GCPC
 async function fetchGitHubStats() {
-    const orgName = 'GCPC-PlsFixMe';
+    const username = 'GCPC-PlsFixMe';
     const stats = {
         linesOfCode: 0,
         projectsCount: 0,
@@ -27,14 +27,14 @@ async function fetchGitHubStats() {
     };
 
     try {
-        // Get organization public repositories (include all pages)
+        // Get user public repositories (include all pages)
         let allRepos = [];
         let page = 1;
         let hasMore = true;
         
         while (hasMore) {
             const response = await fetch(
-                `https://api.github.com/orgs/${orgName}/repos?per_page=100&page=${page}`, 
+                `https://api.github.com/users/${username}/repos?per_page=100&page=${page}`, 
                 { headers }
             );
             
@@ -100,8 +100,8 @@ async function fetchGitHubStats() {
                     if (languages) {
                         // Sum up all language bytes
                         const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
-                        // Estimate lines of code (average 2 lines per byte)
-                        stats.linesOfCode += Math.floor(totalBytes * 2);
+                        // Estimate lines of code (average ~45 bytes per line including whitespace, comments)
+                        stats.linesOfCode += Math.floor(totalBytes / 45);
                     }
                 }
                 
@@ -127,10 +127,16 @@ async function fetchGitHubStats() {
         
     } catch (error) {
         console.error('Error fetching GitHub statistics:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            username: username
+        });
+        
         // Fallback to default values if there's an error
-        if (statElements.linesOfCode) statElements.linesOfCode.textContent = '1000+';
-        if (statElements.projectsCount) statElements.projectsCount.textContent = '5+';
-        if (statElements.contributors) statElements.contributors.textContent = '5+';
+        if (statElements.linesOfCode) statElements.linesOfCode.textContent = '10,000+';
+        if (statElements.projectsCount) statElements.projectsCount.textContent = '3+';
+        if (statElements.contributors) statElements.contributors.textContent = '2+';
     }
 }
 
