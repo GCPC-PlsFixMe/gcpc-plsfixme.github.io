@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>404 - Page Not Found | GCPC ❤️ GitHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* 404-specific styles */
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .error-code {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(4rem, 15vw, 12rem);
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.1em;
+            position: relative;
+            display: inline-block;
+        }
+
+        .error-digit {
+            display: inline-block;
+            color: #00ffff;
+            text-shadow: 
+                0 0 5px #00ffff,
+                0 0 10px #00ffff,
+                0 0 15px #00ffff,
+                0 0 20px #00ffff,
+                0 0 25px rgba(0, 255, 255, 0.5);
+            animation: flicker 3s infinite;
+        }
+
+        .error-digit:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .error-digit:nth-child(2) {
+            animation-delay: 0.7s;
+            color: #ff00ff;
+            text-shadow: 
+                0 0 5px #ff00ff,
+                0 0 10px #ff00ff,
+                0 0 15px #ff00ff,
+                0 0 20px #ff00ff,
+                0 0 25px rgba(255, 0, 255, 0.5);
+        }
+
+        .error-digit:nth-child(3) {
+            animation-delay: 1.4s;
+        }
+
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+                opacity: 1;
+            }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+                opacity: 0.3;
+                filter: brightness(0.7);
+            }
+        }
+
+        .error-message {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: #e0e0e0;
+            margin: 2rem 0 1rem;
+            font-weight: 300;
+        }
+
+        .error-quote {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: #00ffff;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 255, 255, 0.05);
+            line-height: 1.6;
+            font-style: italic;
+            position: relative;
+            animation: quoteFadeIn 1s ease-in;
+        }
+
+        @keyframes quoteFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-quote::before {
+            content: '"';
+            color: #ff00ff;
+            opacity: 0.8;
+            margin-right: 0.25rem;
+        }
+
+        .error-quote::after {
+            content: '"';
+            color: #ff00ff;
+            opacity: 0.8;
+        }
+
+        .error-actions {
+            margin-top: 3rem;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .error-btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            text-decoration: none;
+            color: #121212;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+        }
+
+        .error-btn.secondary {
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .error-btn.secondary:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        }
+
+        .glitch-text {
+            animation: glitch 5s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% {
+                transform: translate(0);
+            }
+            91% {
+                transform: translate(-2px, 2px);
+            }
+            92% {
+                transform: translate(2px, -2px);
+            }
+            93% {
+                transform: translate(-2px, -2px);
+            }
+            94% {
+                transform: translate(2px, 2px);
+            }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .error-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .error-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <canvas id="nodeGraph"></canvas>
+    </div>
+    
+    <div class="container">
+        <main>
+            <div class="error-container">
+                <h1 class="error-code">
+                    <span class="error-digit">4</span><span class="error-digit">0</span><span class="error-digit">4</span>
+                </h1>
+                
+                <h2 class="error-message glitch-text">Page Not Found</h2>
+                
+                <div class="error-quote" id="errorQuote">
+                    Loading wisdom about missing things...
+                </div>
+
+                <div class="error-actions">
+                    <a href="index.html" class="error-btn">
+                        <i class="fas fa-home"></i>
+                        Return Home
+                    </a>
+                    <a href="guides.html" class="error-btn secondary">
+                        <i class="fas fa-book"></i>
+                        Browse Guides
+                    </a>
+                    <button onclick="loadNewQuote()" class="error-btn secondary">
+                        <i class="fas fa-sync-alt"></i>
+                        New Quote
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/nodeGraph.js"></script>
+    <script src="js/404-quotes.js"></script>
+    <script>
+        // Load and display a random quote
+        function loadNewQuote() {
+            if (window.ERROR_QUOTES && window.ERROR_QUOTES.length > 0) {
+                const quote = window.ERROR_QUOTES[Math.floor(Math.random() * window.ERROR_QUOTES.length)];
+                const quoteElement = document.getElementById('errorQuote');
+                
+                // Fade out
+                quoteElement.style.opacity = '0';
+                quoteElement.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    quoteElement.textContent = quote;
+                    // Fade in
+                    quoteElement.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    quoteElement.style.opacity = '1';
+                    quoteElement.style.transform = 'translateY(0)';
+                }, 300);
+            }
+        }
+
+        // Load initial quote on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadNewQuote, 100);
+        });
+    </script>
+</body>
+</html>
