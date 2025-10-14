@@ -327,16 +327,22 @@
     ctx.font = '18px "Share Tech Mono", monospace';
     ctx.fillText('Press Space to retry or Esc to exit', canvas.width/2, canvas.height/2 + 20);
 
-    const retry = (e) => {
-      if (e && e.code !== 'Space') return;
-      window.removeEventListener('keydown', retry);
-      if (!canvas) return;
-      running = true;
-      resetGame();
-      lastTime = 0;
-      rafId = requestAnimationFrame(loop);
+    const handleGameOver = (e) => {
+      if (e.code === 'Space') {
+        window.removeEventListener('keydown', handleGameOver);
+        if (!canvas) return;
+        running = true;
+        resetGame();
+        lastTime = 0;
+        rafId = requestAnimationFrame(loop);
+      } else if (e.code === 'Escape') {
+        window.removeEventListener('keydown', handleGameOver);
+        if (typeof FlappyNode.onRequestExit === 'function') {
+          FlappyNode.onRequestExit();
+        }
+      }
     };
-    window.addEventListener('keydown', retry, { once: true });
+    window.addEventListener('keydown', handleGameOver);
   }
 
   function resizeCanvas() {
