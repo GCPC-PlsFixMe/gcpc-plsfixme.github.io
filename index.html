@@ -17,39 +17,7 @@
     </div>
     
     <div class="container">
-        <header>
-            <h1>
-                <span class="title-word">
-                    <span class="letter">G</span>
-                    <span class="letter">C</span>
-                    <span class="letter">P</span>
-                    <span class="letter">C</span>
-                </span>
-                <span class="heart" aria-hidden="true">❤️</span>
-                <span class="title-word">
-                    <span class="letter">G</span>
-                    <span class="letter">i</span>
-                    <span class="letter">t</span>
-                    <span class="letter">H</span>
-                    <span class="letter">u</span>
-                    <span class="letter">b</span>
-                </span>
-            </h1>
-            <a href="https://gcpc.plsfix.me" target="_blank" rel="noopener noreferrer" class="tagline-link">
-                <p class="tagline" id="tagline">
-                    <span class="tag-hash">$</span>
-                    <span class="tag-letters" aria-label="ELEVATE">
-                        <span class="tag-letter" data-letter="E">E</span>
-                        <span class="tag-letter" data-letter="L">L</span>
-                        <span class="tag-letter" data-letter="E">E</span>
-                        <span class="tag-letter" data-letter="V">V</span>
-                        <span class="tag-letter" data-letter="A">A</span>
-                        <span class="tag-letter" data-letter="T">T</span>
-                        <span class="tag-letter" data-letter="E">E</span>
-                    </span>
-                </p>
-            </a>
-        </header>
+        <div id="header-container"></div>
 
         <main>
             <section class="projects" id="projects">
@@ -131,17 +99,7 @@
             </section>
         </main>
 
-        <footer>
-            <div class="social-links">
-                <a href="https://gcpc.plsfix.me" target="_blank" rel="noopener noreferrer" title="Home">
-                    <i class="fas fa-home"></i>
-                </a>
-                <a href="https://github.com/GCPC-PlsFixMe" target="_blank" rel="noopener noreferrer" title="GitHub">
-                    <i class="fab fa-github"></i>
-                </a>
-            </div>
-            <p>&copy; <span id="currentYear"></span> GCPC. All rights reserved.</p>
-        </footer>
+        <div id="footer-container"></div>
     </div>
 
     <div class="construction-alert" id="constructionAlert" style="display: none;">
@@ -166,6 +124,8 @@
         <div class="flappy-hint">Press Space to flap • Esc to exit</div>
     </div>
 
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
     <script src="js/nodeGraph.js"></script>
     <script src="js/flappyNode.js"></script>
     <script src="js/main.js"></script>

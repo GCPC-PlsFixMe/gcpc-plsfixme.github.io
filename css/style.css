@@ -29,6 +29,27 @@
     100% { filter: brightness(1); }
 }
 
+/* GCPC title link */
+.title-link {
+    text-decoration: none;
+    display: inline-flex;
+    transition: all 0.3s ease;
+}
+
+.title-link:hover .title-word {
+    filter: brightness(1.3);
+    text-shadow: 0 0 20px var(--accent-color);
+}
+
+.title-link:hover .letter {
+    animation-play-state: paused;
+    transform: translateY(-5px) scale(1.05);
+}
+
+.title-link:active .letter {
+    transform: translateY(0) scale(1);
+}
+
 /* Unlock toast for secret code success */
 .unlock-toast {
     position: fixed;
@@ -93,6 +114,11 @@ canvas#nodeGraph {
     margin: 0 auto;
     padding: 2rem;
     position: relative;
+}
+
+/* Header Container - prevents layout shift */
+#header-container {
+    min-height: 300px; /* Approximate header height */
 }
 
 /* Header Styles */
