@@ -6,12 +6,18 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Guides - GCPC ❤️ GitHub</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/loader.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/construction.css">
 </head>
 <body>
+    <!-- Loading Splash Screen -->
+    <div id="loadingSplash">
+        <canvas id="loaderCanvas"></canvas>
+    </div>
+
     <div class="background">
         <canvas id="nodeGraph"></canvas>
     </div>
@@ -150,6 +156,7 @@
         <div class="flappy-hint">Press Space to flap • Esc to exit</div>
     </div>
 
+    <script src="js/loader.js"></script>
     <script src="js/header.js"></script>
     <script src="js/footer.js"></script>
     <script src="js/nodeGraph.js"></script>
