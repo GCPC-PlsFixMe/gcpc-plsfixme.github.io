@@ -275,7 +275,11 @@ class NodeGraph {
         return {
             x: Math.random() * this.canvas.width,
             y: Math.random() * this.canvas.height,
+            vx: 0, // Velocity-based movement for smoother motion
+            vy: 0,
             speed: 1.2, // Increased from 0.8 for more aggressive movement
+            acceleration: 0.15, // Acceleration rate for smooth speed changes
+            damping: 0.92, // Velocity damping for smooth deceleration
             frame,
             frameTicker: 0,
             frameInterval: 8, // Fast alternation for spinning top effect
@@ -294,7 +298,8 @@ class NodeGraph {
             stalkingFrames: 0, // Track how long in stalking mode without catching
             warpCooldown: 0, // Cooldown between warps
             warpEffect: null, // Active warp effect data
-            rainbowCharging: null // Rainbow node charging state
+            rainbowCharging: null, // Rainbow node charging state
+            isAbducting: false
         };
     }
 
@@ -306,6 +311,7 @@ class NodeGraph {
         if (this.nodes.length === 0) {
             ufo.targetId = null;
             ufo.beam = null;
+            ufo.isAbducting = false;
         }
 
         if (ufo.cooldown > 0) {
@@ -317,6 +323,14 @@ class NodeGraph {
             if (!targetExists) {
                 ufo.beam = null;
                 ufo.targetId = null;
+                ufo.isAbducting = false;
+            }
+            
+            // Cancel beam if UFO is outside viewable area
+            if (!this.isUFOInViewableArea(ufo)) {
+                ufo.beam = null;
+                ufo.targetId = null;
+                ufo.isAbducting = false;
             }
         }
 
@@ -330,14 +344,7 @@ class NodeGraph {
                     ufo.maxPursuitFrames = Math.floor(Math.random() * 180) + 300;
                     ufo.stalkingFrames = 0;
                     
-                    // Only warp if coming from idle state (no previous target)
-                    // Don't warp if already chasing another node
-                    if (ufo.warpCooldown <= 0 && !ufo.beam && !ufo.rainbowCharging && previousTargetId === null) {
-                        const randomX = Math.random() * this.canvas.width;
-                        const randomY = Math.random() * this.canvas.height;
-                        this.initiateUFOTeleportWarp(ufo, randomX, randomY);
-                        return;
-                    }
+                    // Previously warped immediately after acquiring a target; now remain in place to avoid teleporting mid-target.
                 }
             }
         }
@@ -392,22 +399,39 @@ class NodeGraph {
                 if (inAbductionCone) {
                     // Target in abduction zone - move toward it aggressively
                     ufo.stalkingFrames = 0; // Reset stalking counter
-                    ufo.x += (dx / distance) * ufo.speed * 1.3; // Even more aggressive
-                    ufo.y += (dy / distance) * ufo.speed * 1.3;
+                    
+                    // Match target node's velocity for smooth tracking
+                    const velocityMatchStrength = Math.min(1, (ufo.captureDistance - distance) / ufo.captureDistance);
+                    const nodeVx = targetNode.vx || 0;
+                    const nodeVy = targetNode.vy || 0;
+                    
+                    // Blend between pursuit and velocity matching
+                    const targetVx = (dx / distance) * ufo.speed * 1.3;
+                    const targetVy = (dy / distance) * ufo.speed * 1.3;
+                    const matchedVx = targetVx + nodeVx * velocityMatchStrength;
+                    const matchedVy = targetVy + nodeVy * velocityMatchStrength;
+                    
+                    ufo.vx += (matchedVx - ufo.vx) * ufo.acceleration;
+                    ufo.vy += (matchedVy - ufo.vy) * ufo.acceleration;
                 } else if (distance > stalkingDistance) {
                     // Target not in cone and far away - move toward it aggressively
-                    ufo.x += (dx / distance) * ufo.speed; // Increased from 0.6
-                    ufo.y += (dy / distance) * ufo.speed;
+                    const targetVx = (dx / distance) * ufo.speed;
+                    const targetVy = (dy / distance) * ufo.speed;
+                    ufo.vx += (targetVx - ufo.vx) * ufo.acceleration;
+                    ufo.vy += (targetVy - ufo.vy) * ufo.acceleration;
                 } else {
                     // Target not in cone but close - reposition aggressively or warp
                     ufo.stalkingFrames++;
                     
                     // Warp to ideal position if stalking too long (3 seconds, more patient)
-                    if (ufo.stalkingFrames > 180 && ufo.warpCooldown <= 0 && !ufo.beam && !ufo.rainbowCharging) {
+                    if (ufo.stalkingFrames > 180 && ufo.warpCooldown <= 0 && !ufo.beam && !ufo.isAbducting && !ufo.rainbowCharging) {
                         const idealX = targetNode.x;
                         const idealY = targetNode.y - stalkingDistance;
-                        this.initiateUFOTeleportWarp(ufo, idealX, idealY);
+                        ufo.targetId = null;
+                        ufo.isAbducting = false;
+                        ufo.targetPursuitFrames = 0;
                         ufo.stalkingFrames = 0;
+                        this.initiateUFOTeleportWarp(ufo, idealX, idealY);
                         return;
                     }
                     
@@ -426,17 +450,32 @@ class NodeGraph {
                     const toIdealY = idealY - ufo.y;
                     const idealDistance = Math.sqrt(toIdealX * toIdealX + toIdealY * toIdealY) || 1;
                     
-                    // Much faster repositioning
+                    // Much faster repositioning with velocity
                     const repositionSpeed = 0.8;
-                    ufo.x += (toIdealX / idealDistance) * repositionSpeed;
-                    ufo.y += (toIdealY / idealDistance) * repositionSpeed;
+                    const targetVx = (toIdealX / idealDistance) * repositionSpeed;
+                    const targetVy = (toIdealY / idealDistance) * repositionSpeed;
+                    ufo.vx += (targetVx - ufo.vx) * ufo.acceleration;
+                    ufo.vy += (targetVy - ufo.vy) * ufo.acceleration;
                 }
                 
-                ufo.x += (Math.random() - 0.5) * 0.5; // More erratic movement
-                ufo.y += (Math.random() - 0.5) * 0.5;
+                // Reduced random movement for less jitter
+                ufo.vx += (Math.random() - 0.5) * 0.08;
+                ufo.vy += (Math.random() - 0.5) * 0.08;
+                
+                // Apply velocity with damping
+                ufo.vx *= ufo.damping;
+                ufo.vy *= ufo.damping;
+                ufo.x += ufo.vx;
+                ufo.y += ufo.vy;
+                
                 this.handleUFOEdgeWrapping(ufo); // Asteroids-style edge wrapping
                 
                 if (distance < ufo.captureDistance && ufo.cooldown <= 0 && inAbductionCone) {
+                    // Don't activate beam if UFO is outside viewable area
+                    if (!this.isUFOInViewableArea(ufo)) {
+                        return; // UFO in padding area, skip beam activation
+                    }
+                    
                     const baseDistance = Math.sqrt(bx * bx + by * by) || 1;
                     // Don't activate beam if target is too far from beam origin (prevents super long beams)
                     const maxBeamLength = ufo.captureDistance * 0.8;
@@ -454,6 +493,7 @@ class NodeGraph {
                         locked: false,
                         renderPosition: { x: beamBase.x, y: beamBase.y }
                     };
+                    ufo.isAbducting = true;
                 }
             } else {
                 const beamBase = this.getBeamBasePosition();
@@ -461,13 +501,75 @@ class NodeGraph {
                 const bx = targetNode.x - beamBase.x;
                 const by = targetNode.y - beamBase.y;
                 const baseDistance = Math.sqrt(bx * bx + by * by) || 1;
+                const beamAngle = Math.atan2(by, bx) * (180 / Math.PI);
+                const isBelowBeam = targetNode.y >= beamBase.y;
+                
+                // More forgiving cone angles - wider when locked, moderate when extending
+                const minAngle = beam.locked ? 45 : 55;
+                const maxAngle = beam.locked ? 135 : 125;
+                const withinBeamCone = isBelowBeam && beamAngle >= minAngle && beamAngle <= maxAngle;
+                
+                // Only cancel if outside cone AND not locked (locked beam is very persistent)
+                if (!withinBeamCone && !beam.locked) {
+                    // Add grace counter to prevent instant cancellation
+                    if (!beam.coneViolationFrames) {
+                        beam.coneViolationFrames = 0;
+                    }
+                    beam.coneViolationFrames++;
+                    
+                    // Only cancel after being outside cone for 15 frames (0.25 seconds)
+                    if (beam.coneViolationFrames > 15) {
+                        ufo.beam = null;
+                        ufo.targetId = null;
+                        ufo.isAbducting = false;
+                        return;
+                    }
+                } else {
+                    // Reset violation counter when back in cone
+                    if (beam.coneViolationFrames) {
+                        beam.coneViolationFrames = 0;
+                    }
+                }
+                
+                // Match node velocity during beam extension for smooth tracking
+                if (!beam.locked) {
+                    const nodeVx = targetNode.vx || 0;
+                    const nodeVy = targetNode.vy || 0;
+                    ufo.vx += (nodeVx - ufo.vx) * 0.2;
+                    ufo.vy += (nodeVy - ufo.vy) * 0.2;
+                    
+                    // Apply velocity
+                    ufo.vx *= 0.9;
+                    ufo.vy *= 0.9;
+                    ufo.x += ufo.vx;
+                    ufo.y += ufo.vy;
+                }
                 
                 // Cancel beam if target has moved too far away
-                const maxBeamLength = ufo.captureDistance * 0.8;
+                // Locked beams are much more persistent - can stretch further
+                const maxBeamLength = beam.locked ? ufo.captureDistance * 1.2 : ufo.captureDistance * 0.9;
+                
                 if (baseDistance > maxBeamLength) {
-                    ufo.beam = null;
-                    ufo.targetId = null;
-                    return;
+                    // Add grace period for distance violations too
+                    if (!beam.distanceViolationFrames) {
+                        beam.distanceViolationFrames = 0;
+                    }
+                    beam.distanceViolationFrames++;
+                    
+                    // Locked beams get more time before cancellation (30 frames vs 10)
+                    const maxViolationFrames = beam.locked ? 30 : 10;
+                    
+                    if (beam.distanceViolationFrames > maxViolationFrames) {
+                        ufo.beam = null;
+                        ufo.targetId = null;
+                        ufo.isAbducting = false;
+                        return;
+                    }
+                } else {
+                    // Reset distance violation counter
+                    if (beam.distanceViolationFrames) {
+                        beam.distanceViolationFrames = 0;
+                    }
                 }
                 const extendSpeed = beam.extendSpeed || (Math.max(ufo.spriteScale * 0.08, baseDistance / 250) * 2.66);
                 beam.extendSpeed = extendSpeed;
@@ -491,43 +593,64 @@ class NodeGraph {
                     }
                     beam.alignmentProgress = Math.min(1, beam.alignmentProgress + 0.015);
                     
-                    // Zero out node's velocity so it doesn't fight the beam
-                    targetNode.vx = 0;
-                    targetNode.vy = 0;
-                    
                     // Target: directly under UFO center
                     const ufoX = ufo.x;
                     const ufoBaseY = beamBase.y;
                     
-                    // Blend between current position and aligned position
-                    // Horizontal alignment happens faster for spring effect
-                    const hAlignSpeed = 0.08; // Gentle horizontal spring
-                    const vPullSpeed = beam.extendSpeed * 1.2; // Vertical pull
-                    
-                    // Spring horizontally toward center
+                    // Calculate desired node movement
                     const hDist = ufoX - targetNode.x;
-                    targetNode.x += hDist * hAlignSpeed;
-                    
-                    // Pull vertically upward
                     const vDist = ufoBaseY - targetNode.y;
                     const vDistance = Math.abs(vDist);
                     const distanceToBase = Math.sqrt(hDist * hDist + vDist * vDist) || 1;
-                    targetNode.y += (vDist / vDistance) * vPullSpeed;
                     
-                    // Add small wiggle to UFO while keeping it locked in place
-                    const wiggleStrength = 0.3;
-                    ufo.x += (Math.random() - 0.5) * wiggleStrength;
-                    ufo.y += (Math.random() - 0.5) * wiggleStrength;
+                    // Blend between current position and aligned position
+                    const hAlignSpeed = 0.08; // Gentle horizontal spring
+                    const vPullSpeed = beam.extendSpeed * 1.2; // Vertical pull
+                    
+                    // Calculate node's desired velocity
+                    const nodeDesiredVx = hDist * hAlignSpeed;
+                    const nodeDesiredVy = (vDist / vDistance) * vPullSpeed;
+                    
+                    // UFO matches the node's movement to stay aligned
+                    // This prevents jitter as the node moves toward the UFO
+                    const matchStrength = 0.7; // How much UFO follows node movement
+                    ufo.vx += (nodeDesiredVx * matchStrength - ufo.vx) * 0.3;
+                    ufo.vy += (nodeDesiredVy * matchStrength - ufo.vy) * 0.3;
+                    
+                    // Apply node movement
+                    targetNode.vx = nodeDesiredVx;
+                    targetNode.vy = nodeDesiredVy;
+                    targetNode.x += targetNode.vx;
+                    targetNode.y += targetNode.vy;
+                    
+                    // Minimal wiggle during beam lock to reduce jitter
+                    const wiggleStrength = 0.03;
+                    ufo.vx += (Math.random() - 0.5) * wiggleStrength;
+                    ufo.vy += (Math.random() - 0.5) * wiggleStrength;
+                    
+                    // Apply damped velocity for smooth locked position
+                    ufo.vx *= 0.88;
+                    ufo.vy *= 0.88;
+                    ufo.x += ufo.vx;
+                    ufo.y += ufo.vy;
                     
                     beam.progress += 1;
                     beam.renderPosition = { x: targetNode.x, y: targetNode.y };
+                    
                     // Complete abduction when node actually reaches UFO bottom
                     if (distanceToBase < ufo.spriteScale * 1.5) {
+                        // Zero out velocities on completion
+                        targetNode.vx = 0;
+                        targetNode.vy = 0;
                         const index = this.nodes.findIndex(node => node.id === targetNode.id);
                         if (index !== -1) {
                             this.nodes.splice(index, 1);
                         }
                         this.abductionCount++;
+                        
+                        // Gradually slow UFO after abduction
+                        ufo.vx *= 0.5;
+                        ufo.vy *= 0.5;
                         
                         // Initiate rainbow node charging after 10 abductions
                         if (this.abductionCount >= 10) {
@@ -542,6 +665,7 @@ class NodeGraph {
                         ufo.cooldown = ufo.captureCooldown;
                         ufo.beam = null;
                         ufo.targetId = null;
+                        ufo.isAbducting = false;
                         // Reset pursuit timer after successful capture
                         ufo.targetPursuitFrames = 0;
                         ufo.maxPursuitFrames = Math.floor(Math.random() * 180) + 300;
@@ -558,7 +682,7 @@ class NodeGraph {
             
             // Random warp when idle too long, biased toward center (more deliberate)
             // UFO roams much longer before considering a warp (6-8+ seconds)
-            if (ufo.idleFrames > 360 && ufo.warpCooldown <= 0 && !ufo.beam && !ufo.targetId && !ufo.rainbowCharging && Math.random() < 0.005) {
+            if (ufo.idleFrames > 360 && ufo.warpCooldown <= 0 && !ufo.beam && !ufo.isAbducting && !ufo.targetId && !ufo.rainbowCharging && Math.random() < 0.005) {
                 // 70% chance to warp near center, 30% chance anywhere
                 let randomX, randomY;
                 if (Math.random() < 0.7) {
@@ -584,21 +708,27 @@ class NodeGraph {
             const toCenterY = centerY - ufo.y;
             const centerDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY) || 1;
             
-            // Gentle pull toward center (10% bias)
-            ufo.x += (toCenterX / centerDist) * 0.35;
-            ufo.y += (toCenterY / centerDist) * 0.25;
+            // Gentle pull toward center using velocity
+            ufo.vx += (toCenterX / centerDist) * 0.08;
+            ufo.vy += (toCenterY / centerDist) * 0.06;
             
-            // Much more aggressive random movement
-            ufo.x += (Math.random() - 0.5) * 3.5;
-            ufo.y += (Math.random() - 0.5) * 2.5;
+            // Reduced random movement for smoother patrol
+            ufo.vx += (Math.random() - 0.5) * 0.5;
+            ufo.vy += (Math.random() - 0.5) * 0.4;
             
             // Add momentum-like behavior
             if (ufo.idleFrames % 30 === 0) {
                 // Random burst movement every half second, biased toward center
                 const burstAngle = Math.atan2(toCenterY, toCenterX) + (Math.random() - 0.5) * Math.PI;
-                ufo.x += Math.cos(burstAngle) * 15;
-                ufo.y += Math.sin(burstAngle) * 10;
+                ufo.vx += Math.cos(burstAngle) * 2.5;
+                ufo.vy += Math.sin(burstAngle) * 2.0;
             }
+            
+            // Apply damping and velocity
+            ufo.vx *= ufo.damping;
+            ufo.vy *= ufo.damping;
+            ufo.x += ufo.vx;
+            ufo.y += ufo.vy;
             
             // Handle edge wrapping during patrol
             this.handleUFOEdgeWrapping(ufo);
@@ -632,15 +762,9 @@ class NodeGraph {
     // ============================================
     
     initiateUFOTeleportWarp(ufo, targetX, targetY) {
-        // Don't initiate teleport if already warping or charging
-        if (ufo.warpEffect || ufo.rainbowCharging) {
+        // Don't initiate teleport if already warping, charging, abducting, or actively tracking a target
+        if (ufo.warpEffect || ufo.rainbowCharging || ufo.beam || ufo.isAbducting) {
             return;
-        }
-        
-        // Cancel any active beam and target when teleporting
-        if (ufo.beam) {
-            ufo.beam = null;
-            ufo.targetId = null;
         }
         
         ufo.warpEffect = {
@@ -695,6 +819,8 @@ class NodeGraph {
             });
             
             if (warp.progress >= warp.maxProgress) {
+                const postWarpCooldown = 180 + Math.floor(Math.random() * 121);
+                ufo.cooldown = Math.max(ufo.cooldown, postWarpCooldown);
                 ufo.warpEffect = null;
                 ufo.warpCooldown = 240; // 4 second cooldown for more deliberate warping
             }
@@ -709,10 +835,16 @@ class NodeGraph {
         const progressRatio = charging.progress / charging.maxProgress;
         charging.intensity = Math.pow(progressRatio, 2); // Quadratic growth
         
-        // Shake the UFO with increasing intensity
-        const shakeStrength = charging.intensity * 4;
-        ufo.x += (Math.random() - 0.5) * shakeStrength;
-        ufo.y += (Math.random() - 0.5) * shakeStrength;
+        // Reduced shake intensity for less jitter
+        const shakeStrength = charging.intensity * 1.5;
+        ufo.vx += (Math.random() - 0.5) * shakeStrength * 0.3;
+        ufo.vy += (Math.random() - 0.5) * shakeStrength * 0.3;
+        
+        // Apply damped velocity
+        ufo.vx *= 0.88;
+        ufo.vy *= 0.88;
+        ufo.x += ufo.vx;
+        ufo.y += ufo.vy;
         
         // Release when fully charged
         if (charging.progress >= charging.maxProgress) {
@@ -1253,6 +1385,12 @@ class NodeGraph {
     // EDGE WRAPPING (Asteroids-style screen wrapping - no visual effect)
     // ============================================
     
+    isUFOInViewableArea(ufo) {
+        // Check if UFO is within the actual viewable screen area (not in padding)
+        return ufo.x >= 0 && ufo.x <= this.canvas.width &&
+               ufo.y >= 0 && ufo.y <= this.canvas.height;
+    }
+    
     handleUFOEdgeWrapping(ufo) {
         // This is NOT teleport warp - this is continuous Asteroids-style edge wrapping
         // UFO goes off one side and appears on the opposite side
@@ -1265,6 +1403,7 @@ class NodeGraph {
                          ufo.y < -wrapBuffer * 0.5 || ufo.y > this.canvas.height + wrapBuffer * 0.5)) {
             ufo.beam = null;
             ufo.targetId = null;
+            ufo.isAbducting = false;
         }
         
         // Wrap coordinates (Asteroids-style) and track if wrapping occurred
@@ -1289,6 +1428,7 @@ class NodeGraph {
         if (didWrap && ufo.beam) {
             ufo.beam = null;
             ufo.targetId = null;
+            ufo.isAbducting = false;
         }
     }
     
