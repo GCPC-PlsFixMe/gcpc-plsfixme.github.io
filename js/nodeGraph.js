@@ -15,7 +15,9 @@ class NodeGraph {
         this.abductionCount = 0;
         this.rainbowClusters = [];
         this.rainbowHue = 0;
-        
+
+        this.animate = this.animate.bind(this);
+
         this.init();
     }
 
@@ -82,22 +84,31 @@ class NodeGraph {
     }
 
     updateLines() {
-        this.lines = [];
-        
+        const nodes = this.nodes;
+        const lines = this.lines;
+        lines.length = 0;
+
+        const maxDistance = 100;
+        const maxDistanceSq = maxDistance * maxDistance;
+        const opacityScale = 0.3 / maxDistance;
+
         // Create lines between nearby nodes
-        for (let i = 0; i < this.nodes.length; i++) {
-            for (let j = i + 1; j < this.nodes.length; j++) {
-                const dx = this.nodes[i].x - this.nodes[j].x;
-                const dy = this.nodes[i].y - this.nodes[j].y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < 100) {
-                    this.lines.push({
-                        x1: this.nodes[i].x,
-                        y1: this.nodes[i].y,
-                        x2: this.nodes[j].x,
-                        y2: this.nodes[j].y,
-                        opacity: (100 - distance) / 100 * 0.3
+        for (let i = 0; i < nodes.length; i++) {
+            const nodeA = nodes[i];
+            for (let j = i + 1; j < nodes.length; j++) {
+                const nodeB = nodes[j];
+                const dx = nodeA.x - nodeB.x;
+                const dy = nodeA.y - nodeB.y;
+                const distanceSq = dx * dx + dy * dy;
+
+                if (distanceSq < maxDistanceSq) {
+                    const distance = Math.sqrt(distanceSq);
+                    lines.push({
+                        x1: nodeA.x,
+                        y1: nodeA.y,
+                        x2: nodeB.x,
+                        y2: nodeB.y,
+                        opacity: (maxDistance - distance) * opacityScale
                     });
                 }
             }
@@ -107,64 +118,73 @@ class NodeGraph {
     updateNodes() {
         // Update rainbow hue for color shifting
         this.rainbowHue = (this.rainbowHue + 1) % 360;
-        
+
         // Update rainbow clusters
         this.updateRainbowClusters();
-        
+
         // Update node positions
-        this.nodes.forEach(node => {
+        const nodes = this.nodes;
+        const mouse = this.mouse;
+        const mouseX = mouse.x;
+        const mouseY = mouse.y;
+        const hasMouse = mouseX !== null && mouseY !== null;
+        const wrapBuffer = 50; // Distance off-screen before wrapping
+        const maxMouseDistance = 100;
+        const maxMouseDistanceSq = maxMouseDistance * maxMouseDistance;
+
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+
             // Apply drag to ruptured nodes
             if (node.ruptured) {
-                const dragFactor = 0.97; // Drag coefficient for smooth slowdown
-                node.vx *= dragFactor;
-                node.vy *= dragFactor;
-                
+                node.vx *= 0.97; // Drag coefficient for smooth slowdown
+                node.vy *= 0.97;
+
                 // Remove ruptured flag when velocity is close to normal
-                const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-                if (speed < 0.6) {
+                const speedSq = node.vx * node.vx + node.vy * node.vy;
+                if (speedSq < 0.36) {
                     node.ruptured = false;
                 }
             }
-            
+
             // Apply drag to launched rainbow nodes
             if (node.launched) {
-                const dragFactor = 0.96; // Stronger drag for organic slowdown
-                node.vx *= dragFactor;
-                node.vy *= dragFactor;
-                
+                node.vx *= 0.96; // Stronger drag for organic slowdown
+                node.vy *= 0.96;
+
                 // Remove launched flag when velocity reaches normal speed
-                const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-                if (speed < 0.5) {
+                const speedSq = node.vx * node.vx + node.vy * node.vy;
+                if (speedSq < 0.25) {
                     node.launched = false;
                 }
             }
-            
+
             // Move nodes
             node.x += node.vx;
             node.y += node.vy;
-            
+
             // Wrap around edges with buffer (go off-screen before wrapping)
-            const wrapBuffer = 50; // Distance off-screen before wrapping
             if (node.x < -wrapBuffer) node.x = this.canvas.width + wrapBuffer;
             if (node.x > this.canvas.width + wrapBuffer) node.x = -wrapBuffer;
             if (node.y < -wrapBuffer) node.y = this.canvas.height + wrapBuffer;
             if (node.y > this.canvas.height + wrapBuffer) node.y = -wrapBuffer;
-            
+
             // React to mouse
-            if (this.mouse.x !== null && this.mouse.y !== null) {
-                const dx = node.x - this.mouse.x;
-                const dy = node.y - this.mouse.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < 100) {
+            if (hasMouse) {
+                const dx = node.x - mouseX;
+                const dy = node.y - mouseY;
+                const distanceSq = dx * dx + dy * dy;
+
+                if (distanceSq < maxMouseDistanceSq) {
+                    const distance = Math.sqrt(distanceSq);
                     const angle = Math.atan2(dy, dx);
-                    const force = (100 - distance) * 0.03;
+                    const force = (maxMouseDistance - distance) * 0.03;
                     node.x += Math.cos(angle) * force;
                     node.y += Math.sin(angle) * force;
                 }
             }
-        });
-        
+        }
+
         this.updateUFO();
         // Update lines
         this.updateLines();
@@ -232,7 +252,7 @@ class NodeGraph {
     animate() {
         this.updateNodes();
         this.draw();
-        requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(this.animate);
     }
 
     createUFOFrames() {
@@ -1385,34 +1405,6 @@ class NodeGraph {
         const row = this.ufoBeamRow;
         const baseY = startY + (row + 0.5) * scale;
         return { x: this.ufo.x, y: baseY };
-    }
-
-    drawThruster() {
-        const ufo = this.ufo;
-        if (!ufo) {
-            return;
-        }
-        const base = this.getBeamBasePosition();
-        const scale = ufo.spriteScale;
-        const pulse = 0.6 + 0.4 * Math.sin(ufo.thrusterPhase * 0.15);
-        const lineLength = scale * (1.5 + pulse * 0.5);
-        const halfWidth = scale * (0.6 + pulse * 0.2);
-        const endY = base.y + lineLength;
-
-        this.ctx.save();
-        const gradient = this.ctx.createLinearGradient(base.x, base.y, base.x, endY);
-        gradient.addColorStop(0, 'rgba(124, 255, 0, 0.9)');
-        gradient.addColorStop(0.5, 'rgba(124, 255, 0, 0.4)');
-        gradient.addColorStop(1, 'rgba(124, 255, 0, 0)');
-        this.ctx.beginPath();
-        this.ctx.moveTo(base.x - halfWidth, base.y);
-        this.ctx.lineTo(base.x + halfWidth, base.y);
-        this.ctx.lineTo(base.x + halfWidth * 0.6, endY);
-        this.ctx.lineTo(base.x - halfWidth * 0.6, endY);
-        this.ctx.closePath();
-        this.ctx.fillStyle = gradient;
-        this.ctx.fill();
-        this.ctx.restore();
     }
 
     findNearestNodeId(ufo) {
