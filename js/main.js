@@ -34,7 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Secret code: ELEVATE
     setupSecretCode();
+    setupUfoCode();
 });
+
+let ufoModeActive = false;
+let ufoHiddenElements = [];
 
 // Secret code handling: ELEVATE -> illuminate tagline, flash, and open game
 function setupSecretCode() {
@@ -91,6 +95,67 @@ function setupSecretCode() {
     if (window.FlappyNode) {
         window.FlappyNode.onRequestExit = closeFlappyNode;
     }
+}
+
+function setupUfoCode() {
+    const TARGET = 'UFO';
+    let index = 0;
+
+    const onKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            if (ufoModeActive) {
+                exitUfoMode();
+            }
+            return;
+        }
+
+        if (ufoModeActive) {
+            return;
+        }
+
+        const overlay = document.getElementById('flappyNodeOverlay');
+        const isOpen = overlay && overlay.style.display !== 'none';
+        if (isOpen) return;
+
+        const key = e.key.toUpperCase();
+        const expected = TARGET[index];
+        if (key === expected) {
+            index += 1;
+            if (index === TARGET.length) {
+                index = 0;
+                enterUfoMode();
+            }
+        } else if (/^[A-Z]$/.test(key)) {
+            index = 0;
+        }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+}
+
+function enterUfoMode() {
+    if (ufoModeActive) return;
+    ufoModeActive = true;
+    ufoHiddenElements = [];
+    const processed = new Set();
+    const selectors = ['#loadingSplash', '.container', '#constructionAlert', '#flappyNodeOverlay'];
+    selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(element => {
+            if (processed.has(element)) return;
+            processed.add(element);
+            ufoHiddenElements.push({ element, display: element.style.display });
+            element.style.display = 'none';
+        });
+    });
+}
+
+function exitUfoMode() {
+    if (!ufoModeActive) return;
+    ufoHiddenElements.forEach(item => {
+        item.element.style.display = item.display;
+    });
+    ufoHiddenElements = [];
+    ufoModeActive = false;
 }
 
 function openFlappyNode() {
