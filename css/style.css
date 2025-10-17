@@ -335,6 +335,7 @@ h1 .heart {
     line-height: 1.4;
     transform: perspective(500px) rotateX(10deg);
     animation: float 2s ease-in-out infinite;
+    background: rgba(30, 40, 20, 0.7);
 }
 
 /* Pixel border effect */
