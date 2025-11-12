@@ -9,7 +9,7 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             overflow: hidden; /* Prevent scrollbars */
-            background-color: transparent;
+            background-color: #000;
         }
         canvas {
             display: block;
@@ -720,6 +720,14 @@
                 </div>
                 <input type="range" min="25" max="400" value="100" class="slider" id="healSpeed">
             </div>
+
+            <div class="slider-control">
+                <div class="slider-label">
+                    <span class="slider-name">Central Branches</span>
+                    <span class="slider-value" id="branchCount-value">6</span>
+                </div>
+                <input type="range" min="3" max="12" value="6" class="slider" id="branchCount">
+            </div>
             
             <button class="reset-btn" id="resetSliders">🔄 Reset to Defaults</button>
         </div>
@@ -745,6 +753,15 @@
         let pingOfDeathPackets = []; // To store C&C ping of death packets
         let phishPackets = []; // To store C&C phishing packets
         let counterStrikePackets = []; // To store guardian counter-strike packets
+        let galaxyStars = [];
+        let galaxyNebulae = [];
+        let galaxyComets = [];
+        let galaxyNovas = [];
+        let galaxyCometExplosions = [];
+        let centralImpactShake = 0;
+        let centralImpactShakePhase = 0;
+        let centralImpactShakeOffsetX = 0;
+        let centralImpactShakeOffsetY = 0;
         // Bot Defense Mode configuration
         const BOT_DEFENSE_DURATION = 10000; // 10s active
         const BOT_DEFENSE_COOLDOWN = 20000; // 20s cooldown
@@ -752,12 +769,20 @@
         let gradientOffset = 0;
         const padding = 40; // Padding from the border
         let lastCrossingCheck = 0; // Throttles the line crossing check
+        // Galaxy background state (populated on startup and resize)
+        const GALAXY_STAR_COUNT = 480;
+        const GALAXY_NEBULA_COUNT = 5;
+        const GALAXY_COMET_CAP = 2;
+        let lastBackgroundTime = Date.now();
+        let lastNovaSpawn = 0;
         
         // Simulation speed multipliers (controlled by sliders)
         let simSpeedMultiplier = 1.0;
         let packetSpeedMultiplier = 1.0;
         let attackFreqMultiplier = 1.0;
         let healSpeedMultiplier = 1.0;
+        const DEFAULT_BRANCH_COUNT = 6;
+        let desiredBranchCount = DEFAULT_BRANCH_COUNT;
 
         // Statistics tracking object
         const stats = {
@@ -957,7 +982,7 @@
             statusRecovered: ({ node, previousStatus }) => `✅ Node ${node?.id ?? '?'} restored to healthy status (from ${previousStatus ?? 'unknown'}).`,
             statusWarning: ({ node, previousStatus }) => `⚠️ Node ${node?.id ?? '?'} entered warning state (from ${previousStatus ?? 'unknown'}).`,
             statusCommandControl: ({ node, previousStatus }) => `☠️ Node ${node?.id ?? '?'} elevated to Command & Control (from ${previousStatus ?? 'unknown'}).`,
-            statusBlue: ({ node, previousStatus }) => `🔵 Central node restored (from ${previousStatus ?? 'unknown'}).`,
+            statusBlue: ({ node, previousStatus }) => `🌐 Central node restored (from ${previousStatus ?? 'unknown'}).`,
             phishingBlocked: ({ node, defender }) => `🛡️ ${defender ?? 'Defender'} ${node?.id ?? '?'} blocked a phishing attack!`,
             phishingDefended: ({ node }) => `🛡️ Node ${node?.id ?? '?'} successfully defended against phishing.`,
             dispatchBlocked: ({ target }) => `⚠️ Remediation packet to node ${target?.id ?? '?'} was intercepted by infected nodes.`,
@@ -1182,7 +1207,19 @@
                 healSpeedMultiplier = e.target.value / 100;
                 healSpeedValue.textContent = `${healSpeedMultiplier.toFixed(1)}x`;
             });
-            
+
+            // Central Branches Slider
+            const branchSlider = document.getElementById('branchCount');
+            const branchValue = document.getElementById('branchCount-value');
+            if (branchSlider && branchValue) {
+                branchSlider.addEventListener('input', (e) => {
+                    desiredBranchCount = parseInt(e.target.value, 10);
+                    branchValue.textContent = desiredBranchCount;
+                });
+                branchSlider.value = desiredBranchCount;
+                branchValue.textContent = desiredBranchCount;
+            }
+
             // Reset Button
             const resetBtn = document.getElementById('resetSliders');
             resetBtn.addEventListener('click', () => {
@@ -1191,42 +1228,22 @@
                 packetSpeedSlider.value = 100;
                 attackFreqSlider.value = 100;
                 healSpeedSlider.value = 100;
-                
+                if (branchSlider) branchSlider.value = DEFAULT_BRANCH_COUNT;
+
                 // Update multipliers
                 simSpeedMultiplier = 1.0;
                 packetSpeedMultiplier = 1.0;
                 attackFreqMultiplier = 1.0;
                 healSpeedMultiplier = 1.0;
-                
+                desiredBranchCount = DEFAULT_BRANCH_COUNT;
+
                 // Update display values
                 simSpeedValue.textContent = '1.0x';
                 packetSpeedValue.textContent = '1.0x';
                 attackFreqValue.textContent = '1.0x';
                 healSpeedValue.textContent = '1.0x';
+                if (branchValue) branchValue.textContent = DEFAULT_BRANCH_COUNT;
             });
-        }
-
-        // Apply tool to clicked node
-        function applyTool(node) {
-            if (!activeTool || !node) return;
-            
-            switch(activeTool) {
-                case 'sprout':
-                    sproutNode(node);
-                    break;
-                case 'infect':
-                    infectNode(node);
-                    break;
-                case 'cure':
-                    cureNode(node);
-                    break;
-                case 'harden':
-                    hardenNode(node);
-                    break;
-                case 'link':
-                    linkNodes(node);
-                    break;
-            }
         }
 
         // Tool implementations
@@ -1809,6 +1826,8 @@
                 const enableShadows = nodes.length <= 150;
 
                 if (this.parent === null) {
+                    ctx.save();
+                    ctx.translate(centralImpactShakeOffsetX, centralImpactShakeOffsetY);
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     ctx.fillStyle = mainColorRgba;
@@ -1839,6 +1858,7 @@
                         this.drawShield();
                     }
                     
+                    ctx.restore();
                     return;
                 }
 
@@ -4892,18 +4912,352 @@
             }
         }
 
+        function randomRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function initializeGalaxy() {
+            galaxyStars.length = 0;
+            const starPalette = [
+                { r: 255, g: 255, b: 255 },
+                { r: 176, g: 196, b: 255 },
+                { r: 255, g: 244, b: 214 },
+                { r: 167, g: 210, b: 255 }
+            ];
+            for (let i = 0; i < GALAXY_STAR_COUNT; i++) {
+                const depth = Math.random();
+                const base = starPalette[Math.floor(Math.random() * starPalette.length)];
+                galaxyStars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: 0.25 + depth * 1.6,
+                    speed: 10 + depth * 40,
+                    twinkleSpeed: 0.5 + Math.random() * 1.5,
+                    twinkleOffset: Math.random() * Math.PI * 2,
+                    color: base
+                });
+            }
+
+            galaxyNebulae.length = 0;
+            const nebulaPalette = [
+                { r: 99, g: 102, b: 241 },
+                { r: 14, g: 165, b: 233 },
+                { r: 236, g: 72, b: 153 },
+                { r: 74, g: 222, b: 128 }
+            ];
+            const maxDimension = Math.max(canvas.width, canvas.height) || 1;
+            for (let i = 0; i < GALAXY_NEBULA_COUNT; i++) {
+                const color = nebulaPalette[Math.floor(Math.random() * nebulaPalette.length)];
+                const baseRadius = randomRange(maxDimension * 0.28, maxDimension * 0.45);
+                const driftAngle = Math.random() * Math.PI * 2;
+                const driftSpeed = randomRange(4, 12);
+                galaxyNebulae.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    baseRadius,
+                    color,
+                    pulseSpeed: randomRange(0.25, 0.6),
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    vx: Math.cos(driftAngle) * driftSpeed,
+                    vy: Math.sin(driftAngle) * driftSpeed
+                });
+            }
+
+            galaxyComets.length = 0;
+            galaxyNovas.length = 0;
+            galaxyCometExplosions.length = 0;
+            lastBackgroundTime = Date.now();
+            lastNovaSpawn = lastBackgroundTime;
+        }
+
+        function spawnComet() {
+            const startX = -randomRange(40, 160);
+            const startY = randomRange(-80, canvas.height * 0.7);
+            const speed = randomRange(150, 260);
+            const angle = randomRange(0.12, 0.35);
+            const color = { r: 173, g: 216, b: 255 };
+            galaxyComets.push({
+                x: startX,
+                y: startY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: randomRange(2.2, 3.6),
+                life: randomRange(12, 18),
+                tailDistance: randomRange(140, 220),
+                color
+            });
+        }
+
+        function spawnNova(now) {
+            lastNovaSpawn = now;
+            const novaPalette = [
+                { r: 255, g: 255, b: 255 },
+                { r: 255, g: 214, b: 102 },
+                { r: 147, g: 197, b: 253 },
+                { r: 244, g: 114, b: 182 }
+            ];
+            galaxyNovas.push({
+                x: randomRange(0, canvas.width),
+                y: randomRange(0, canvas.height),
+                start: now,
+                duration: randomRange(1200, 2200),
+                maxRadius: randomRange(Math.max(canvas.width, canvas.height) * 0.08, Math.max(canvas.width, canvas.height) * 0.14),
+                color: novaPalette[Math.floor(Math.random() * novaPalette.length)]
+            });
+        }
+
+        function drawGalaxyBackground(now) {
+            if (canvas.width === 0 || canvas.height === 0) {
+                return;
+            }
+
+            if (galaxyStars.length === 0) {
+                initializeGalaxy();
+            }
+
+            const deltaSeconds = Math.min(0.05, (now - lastBackgroundTime) / 1000) || 0;
+            lastBackgroundTime = now;
+
+            ctx.save();
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Nebulae
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            galaxyNebulae.forEach(nebula => {
+                nebula.x += nebula.vx * deltaSeconds;
+                nebula.y += nebula.vy * deltaSeconds;
+                nebula.pulsePhase += nebula.pulseSpeed * deltaSeconds;
+                const pulse = 0.82 + (Math.cos(nebula.pulsePhase) * -0.18);
+                const maxRadius = nebula.baseRadius;
+                if (nebula.x < -maxRadius) nebula.x = canvas.width + maxRadius;
+                if (nebula.x > canvas.width + maxRadius) nebula.x = -maxRadius;
+                if (nebula.y < -maxRadius) nebula.y = canvas.height + maxRadius;
+                if (nebula.y > canvas.height + maxRadius) nebula.y = -maxRadius;
+                const radius = nebula.baseRadius * pulse;
+                const gradient = ctx.createRadialGradient(nebula.x, nebula.y, 0, nebula.x, nebula.y, radius);
+                gradient.addColorStop(0, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, 0.35)`);
+                gradient.addColorStop(0.6, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, 0.16)`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(nebula.x, nebula.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
+            // Stars
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            galaxyStars.forEach(star => {
+                star.x -= star.speed * deltaSeconds;
+                if (star.x < -star.radius) {
+                    star.x = canvas.width + star.radius;
+                    star.y = Math.random() * canvas.height;
+                }
+                const twinkle = Math.sin(now * 0.002 * star.twinkleSpeed + star.twinkleOffset) * 0.5 + 0.5;
+                const alpha = 0.25 + twinkle * 0.75;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = `rgba(${star.color.r}, ${star.color.g}, ${star.color.b}, 1)`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
+            // Spawn new comets and novas
+            if (galaxyComets.length < GALAXY_COMET_CAP && Math.random() < deltaSeconds * 0.05) {
+                spawnComet();
+            }
+            if (now - lastNovaSpawn > 6000 && Math.random() < deltaSeconds * 0.18) {
+                spawnNova(now);
+            }
+
+            // Comets
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            const rootX = canvas.width / 2;
+            const rootY = canvas.height / 2;
+            const maxCenterDistance = Math.hypot(rootX, rootY) || 1;
+            const centralNode = nodes[0];
+            const centralRadius = centralNode ? centralNode.radius : 0;
+            for (let i = galaxyComets.length - 1; i >= 0; i--) {
+                const comet = galaxyComets[i];
+                comet.x += comet.vx * deltaSeconds;
+                comet.y += comet.vy * deltaSeconds;
+                comet.life -= deltaSeconds;
+
+                if (comet.life <= 0 ||
+                    comet.x < -200 ||
+                    comet.x > canvas.width + 200 ||
+                    comet.y < -200 ||
+                    comet.y > canvas.height + 200) {
+                    galaxyComets.splice(i, 1);
+                    continue;
+                }
+
+                const dirX = comet.x - rootX;
+                const dirY = comet.y - rootY;
+                const dirMag = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+                const distanceFromCenter = Math.min(maxCenterDistance, dirMag);
+                const centerFactor = 1 - (distanceFromCenter / maxCenterDistance);
+
+                if (centralNode && centralRadius > 0) {
+                    if (dirMag <= centralRadius + comet.radius * 0.75) {
+                        galaxyComets.splice(i, 1);
+                        galaxyCometExplosions.push({
+                            x: comet.x,
+                            y: comet.y,
+                            start: now,
+                            duration: 950,
+                            maxRadius: Math.max(centralRadius * 1.6, 60),
+                            color: { ...comet.color }
+                        });
+                        createPopParticles(centralNode.x, centralNode.y, {
+                            r: Math.min(255, comet.color.r + 40),
+                            g: Math.min(255, comet.color.g + 40),
+                            b: Math.min(255, comet.color.b + 40)
+                        });
+                        centralImpactShake = Math.min(centralImpactShake + 8, 24);
+                        centralImpactShakePhase = Math.random() * Math.PI * 2;
+                        centralImpactShakeOffsetX = 0;
+                        centralImpactShakeOffsetY = 0;
+                        continue;
+                    }
+                }
+
+                const influenceRadius = maxCenterDistance * 0.65;
+                if (dirMag < influenceRadius) {
+                    const normDirX = dirX / dirMag;
+                    const normDirY = dirY / dirMag;
+                    const proximity = 1 - (dirMag / influenceRadius);
+                    const radialAccel = 110 * Math.pow(proximity, 1.4);
+                    const tangentialAccel = 22 * (proximity ** 2);
+
+                    // Pull toward the center to curve the path inward
+                    comet.vx += -normDirX * radialAccel * deltaSeconds;
+                    comet.vy += -normDirY * radialAccel * deltaSeconds;
+
+                    // Add a slight tangential component to simulate gravitational bending
+                    const normalX = -normDirY;
+                    const normalY = normDirX;
+                    comet.vx += normalX * tangentialAccel * deltaSeconds;
+                    comet.vy += normalY * tangentialAccel * deltaSeconds;
+                }
+
+                const normX = dirX / dirMag;
+                const normY = dirY / dirMag;
+                const tailEndX = comet.x + normX * comet.tailDistance;
+                const tailEndY = comet.y + normY * comet.tailDistance;
+
+                const brightness = 0.35 + centerFactor * 0.65;
+                const tintAmount = centerFactor * 0.8;
+                const tintedColor = {
+                    r: Math.round(comet.color.r + (255 - comet.color.r) * tintAmount),
+                    g: Math.round(comet.color.g + (255 - comet.color.g) * tintAmount),
+                    b: Math.round(comet.color.b + (255 - comet.color.b) * tintAmount)
+                };
+
+                const gradient = ctx.createLinearGradient(comet.x, comet.y, tailEndX, tailEndY);
+                gradient.addColorStop(0, `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${0.2 + brightness * 0.8})`);
+                gradient.addColorStop(1, 'rgba(20, 20, 20, 0)');
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = comet.radius * (1.4 + centerFactor * 1.2);
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(comet.x, comet.y);
+                ctx.lineTo(tailEndX, tailEndY);
+                ctx.stroke();
+
+                ctx.fillStyle = `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${0.25 + brightness * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(comet.x, comet.y, comet.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Comet explosions
+            if (galaxyCometExplosions.length > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                for (let i = galaxyCometExplosions.length - 1; i >= 0; i--) {
+                    const boom = galaxyCometExplosions[i];
+                    const progress = (now - boom.start) / boom.duration;
+                    if (progress >= 1) {
+                        galaxyCometExplosions.splice(i, 1);
+                        continue;
+                    }
+                    const eased = Math.pow(progress, 0.55);
+                    const radius = boom.maxRadius * eased;
+                    const alpha = 0.75 * (1 - progress);
+                    const gradient = ctx.createRadialGradient(boom.x, boom.y, 0, boom.x, boom.y, radius);
+                    gradient.addColorStop(0, `rgba(${boom.color.r}, ${boom.color.g}, ${boom.color.b}, ${alpha})`);
+                    gradient.addColorStop(0.45, `rgba(${boom.color.r}, ${boom.color.g}, ${boom.color.b}, ${alpha * 0.6})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(boom.x, boom.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // Novas
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = galaxyNovas.length - 1; i >= 0; i--) {
+                const nova = galaxyNovas[i];
+                const progress = (now - nova.start) / nova.duration;
+                if (progress >= 1) {
+                    galaxyNovas.splice(i, 1);
+                    continue;
+                }
+                const eased = progress * (2 - progress);
+                const radius = nova.maxRadius * eased;
+                const alpha = (1 - progress) * 0.8;
+                const gradient = ctx.createRadialGradient(nova.x, nova.y, 0, nova.x, nova.y, radius);
+                gradient.addColorStop(0, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, ${Math.min(1, alpha)})`);
+                gradient.addColorStop(0.4, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, ${alpha * 0.55})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(nova.x, nova.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            ctx.restore();
+
+            // Decay central shake
+            if (centralImpactShake > 0.0001) {
+                centralImpactShake = Math.max(0, centralImpactShake - deltaSeconds * 10);
+                centralImpactShakePhase += deltaSeconds * 20;
+                const magnitude = centralImpactShake;
+                centralImpactShakeOffsetX = Math.sin(centralImpactShakePhase) * magnitude;
+                centralImpactShakeOffsetY = Math.cos(centralImpactShakePhase * 1.3) * magnitude * 0.8;
+            } else {
+                centralImpactShake = 0;
+                centralImpactShakeOffsetX = 0;
+                centralImpactShakeOffsetY = 0;
+            }
+
+            lastBackgroundTime = now;
+        }
+
         let initialBranchTimeout;
         function createGraph() {
             clearTimeout(initialBranchTimeout);
-            nodes = [];
-            edges = [];
-            pulses = [];
-            particles = [];
-            dataPackets = [];
-            immunityPackets = [];
-            pingOfDeathPackets = [];
-            phishPackets = [];
-            counterStrikePackets = [];
+            nodes.length = 0;
+            edges.length = 0;
+            pulses.length = 0;
+            particles.length = 0;
+            dataPackets.length = 0;
+            immunityPackets.length = 0;
+            pingOfDeathPackets.length = 0;
+            phishPackets.length = 0;
+            counterStrikePackets.length = 0;
+
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
@@ -4916,7 +5270,7 @@
             root.radius = root.baseRadius;
             nodes.push(root);
 
-            createInitialBranches(0, 12);
+            createInitialBranches(0, desiredBranchCount);
         }
 
         function createInitialBranches(index, total) {
@@ -6399,10 +6753,20 @@
 
         function updateNetworkTopology() {
             const currentBranches = nodes.filter(n => n.parent === nodes[0] && (n.state === 'alive' || n.state === 'spawning')).length;
-            const changeProbability = 0.1; 
+            const changeProbability = 0.1;
+
+            if (currentBranches > desiredBranchCount) {
+                pruneRandomBranch();
+                pruneSingleNodeBranches();
+                refreshSatelliteLongLinks();
+                maintainGroundStationSatelliteChains();
+                return;
+            }
+
             if (Math.random() < changeProbability) pruneRandomBranch();
-            pruneSingleNodeBranches(); // Always check for single-node branches to prune
-            if (Math.random() < changeProbability && currentBranches < 12) {
+            pruneSingleNodeBranches();
+
+            if (currentBranches < desiredBranchCount && Math.random() < changeProbability) {
                 sproutNewBranch();
             }
 
@@ -8083,6 +8447,7 @@
             const now = Date.now();
             const GUARDIAN_FIREWALL_ATTEMPT_DURATION = 2000 / healSpeedMultiplier;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGalaxyBackground(now);
             gradientOffset = (gradientOffset + 0.005) % 1;
             
             // Performance: Pre-calculate common animation values once per frame
@@ -8579,10 +8944,12 @@
 
         window.addEventListener('resize', () => {
             resizeCanvas();
+            initializeGalaxy();
             createGraph();
         });
 
         resizeCanvas();
+        initializeGalaxy();
         createGraph();
         animate();
         initializeToolButtons();
