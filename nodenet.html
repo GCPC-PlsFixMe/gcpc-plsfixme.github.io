@@ -486,7 +486,7 @@
     <canvas id="networkCanvas"></canvas>
     
     <!-- Stats Pane -->
-    <div id="statsPane">
+    <div id="statsPane" class="collapsed">
         <div class="stats-header">
             <h1 class="stats-title">📊 NodeNet NOC</h1>
             <div class="tab-navigation">
@@ -735,8 +735,8 @@
     </div>
     
     <!-- Stats Pane Toggle Button -->
-    <div id="statsPaneToggle" title="Toggle Stats Panel">
-        <span id="toggleIcon">»</span>
+    <div id="statsPaneToggle" title="Toggle Stats Panel" class="collapsed">
+        <span id="toggleIcon">«</span>
     </div>
 
     <script>
@@ -1141,10 +1141,13 @@
             const statsPane = document.getElementById('statsPane');
             const toggleBtn = document.getElementById('statsPaneToggle');
             const toggleIcon = document.getElementById('toggleIcon');
+            toggleBtn.classList.toggle('collapsed', statsPane.classList.contains('collapsed'));
+            toggleIcon.textContent = statsPane.classList.contains('collapsed') ? '«' : '»';
             
             toggleBtn.addEventListener('click', () => {
                 statsPane.classList.toggle('collapsed');
-                
+                toggleBtn.classList.toggle('collapsed', statsPane.classList.contains('collapsed'));
+
                 // Update toggle icon
                 if (statsPane.classList.contains('collapsed')) {
                     toggleIcon.textContent = '«'; // Point toward center when collapsed
@@ -1452,6 +1455,31 @@
                 }
             }
             return null;
+        }
+
+        // Apply the active tool to a clicked node
+        function applyTool(node) {
+            if (!activeTool || !node) return;
+            
+            switch (activeTool) {
+                case 'sprout':
+                    sproutNode(node);
+                    break;
+                case 'infect':
+                    infectNode(node);
+                    break;
+                case 'cure':
+                    cureNode(node);
+                    break;
+                case 'harden':
+                    hardenNode(node);
+                    break;
+                case 'link':
+                    linkNodes(node);
+                    break;
+                default:
+                    console.warn(`Unknown tool: ${activeTool}`);
+            }
         }
 
         // Canvas click handler for tools
