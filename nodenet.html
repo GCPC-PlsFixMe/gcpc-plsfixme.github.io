@@ -1749,7 +1749,7 @@
                 this.opacity = 0;
                 this.spawnProgress = 0;
                 this.infectedAt = null;
-                this.pulseDelay = 0;
+                this.dispatchDelay = 0;
                 this.isTargeted = false;
                 this.remediationState = 'none';
                 this.remediationStart = 0;
@@ -3613,6 +3613,12 @@
                 this.attachmentAngle = 0; // Angle around the node
                 this.attachmentDistance = 0; // Distance from node center
                 
+                // Smooth attachment transition
+                this.isAttaching = false; // Transitioning to attached state
+                this.attachTransitionProgress = 0; // 0 to 1 during attachment
+                this.attachStartX = 0; // Starting position for smooth transition
+                this.attachStartY = 0;
+                
                 // Seeking behavior
                 this.targetNode = null; // Infected node to seek
                 this.isSeeking = false;
@@ -3626,6 +3632,51 @@
             }
 
             update() {
+                // Handle smooth attachment transition
+                if (this.isAttaching && this.attachedNode) {
+                    const isCentralNode = this.attachedNode.parent === null;
+                    const isInfected = this.attachedNode.status === 'malware' || this.attachedNode.status === 'botnet' || this.attachedNode.status === 'commandControl';
+                    
+                    // Check if node can still hold packets
+                    if (!isInfected && !isCentralNode) {
+                        this.active = false;
+                        createPopParticles(this.x, this.y, this.color);
+                        return;
+                    }
+                    
+                    // Smoothly transition to attached position
+                    this.attachTransitionProgress += 0.08; // Smooth transition speed
+                    
+                    if (this.attachTransitionProgress >= 1) {
+                        // Transition complete
+                        this.isAttaching = false;
+                        this.isAttached = true;
+                        this.attachTransitionProgress = 1;
+                    }
+                    
+                    // Calculate target position
+                    const packetIndex = this.attachedNode.attachedImmunityPackets.indexOf(this);
+                    let baseAngle = 0;
+                    if (packetIndex !== -1) {
+                        const totalPackets = this.attachedNode.attachedImmunityPackets.length;
+                        baseAngle = (packetIndex / totalPackets) * Math.PI * 2;
+                    }
+                    
+                    const rotationSpeed = 0.01;
+                    const rotationOffset = this.attachedNode.time * rotationSpeed;
+                    this.attachmentAngle = baseAngle + rotationOffset;
+                    
+                    const distance = this.attachedNode.radius + 5;
+                    const targetX = this.attachedNode.x + Math.cos(this.attachmentAngle) * distance;
+                    const targetY = this.attachedNode.y + Math.sin(this.attachmentAngle) * distance;
+                    
+                    // Ease-out interpolation for smooth deceleration
+                    const easeProgress = 1 - Math.pow(1 - this.attachTransitionProgress, 3);
+                    this.x = this.attachStartX + (targetX - this.attachStartX) * easeProgress;
+                    this.y = this.attachStartY + (targetY - this.attachStartY) * easeProgress;
+                    return;
+                }
+                
                 // If attached to a node, cling to its perimeter
                 if (this.isAttached && this.attachedNode) {
                     const isCentralNode = this.attachedNode.parent === null;
@@ -3750,11 +3801,15 @@
                     
                     const distToNode = Math.sqrt((this.x - node.x) ** 2 + (this.y - node.y) ** 2);
                     if (distToNode < node.radius + 15) {
-                        // Attach to this node
-                        this.isAttached = true;
+                        // Start smooth attachment transition
+                        this.isAttaching = true;
+                        this.isAttached = false; // Will become true after transition
                         this.attachedNode = node;
                         this.isSeeking = false; // Clear seeking state
                         this.targetNode = null;
+                        this.attachTransitionProgress = 0;
+                        this.attachStartX = this.x;
+                        this.attachStartY = this.y;
                         
                         // Add to node's attached packets
                         if (!node.attachedImmunityPackets.includes(this)) {
@@ -3899,10 +3954,23 @@
             draw() {
                 if (!this.active) return;
                 
+                // Hide packet during early attachment transition to prevent flash at center
+                if (this.isAttaching && this.attachTransitionProgress < 0.2) {
+                    return; // Don't draw until 20% through transition
+                }
+                
                 ctx.save();
                 
+                // Calculate fade-in opacity during attachment transition
+                let fadeMultiplier = 1.0;
+                if (this.isAttaching && this.attachTransitionProgress < 0.5) {
+                    // Fade in from 20% to 50% of transition
+                    fadeMultiplier = (this.attachTransitionProgress - 0.2) / 0.3;
+                    fadeMultiplier = Math.max(0, Math.min(1, fadeMultiplier));
+                }
+                
                 // Check if attached to central node
-                const isAttachedToCentral = this.isAttached && this.attachedNode && this.attachedNode.parent === null;
+                const isAttachedToCentral = (this.isAttached || this.isAttaching) && this.attachedNode && this.attachedNode.parent === null;
                 
                 // Supercharged packets OR packets attached to central node pulse with neon yellow
                 if (this.isSupercharged || isAttachedToCentral) {
@@ -3918,14 +3986,14 @@
                     const g = brightYellow.g + (neonYellow.g - brightYellow.g) * pulseFactor;
                     const b = brightYellow.b + (neonYellow.b - brightYellow.b) * pulseFactor;
                     
-                    // Intense neon glow for supercharged packets
-                    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
-                    ctx.shadowBlur = 25 + pulseFactor * 20; // Much brighter glow
+                    // Intense neon glow for supercharged packets (with fade-in)
+                    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${fadeMultiplier})`;
+                    ctx.shadowBlur = (25 + pulseFactor * 20) * fadeMultiplier; // Much brighter glow
                     
-                    // Draw with pulsing neon yellow
+                    // Draw with pulsing neon yellow (with fade-in)
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity * fadeMultiplier})`;
                     ctx.fill();
                 } else {
                     // Emergency lights effect - alternate between bright red and white smoothly
@@ -3942,14 +4010,14 @@
                     const g = brightRed.g + (brightWhite.g - brightRed.g) * flashValue;
                     const b = brightRed.b + (brightWhite.b - brightRed.b) * flashValue;
                     
-                    // Enhanced glow that pulses with the color - brighter and more intense
-                    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
-                    ctx.shadowBlur = 18 + flashValue * 12;
+                    // Enhanced glow that pulses with the color - brighter and more intense (with fade-in)
+                    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${fadeMultiplier})`;
+                    ctx.shadowBlur = (18 + flashValue * 12) * fadeMultiplier;
                     
-                    // Draw emergency light packet
+                    // Draw emergency light packet (with fade-in)
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity * fadeMultiplier})`;
                     ctx.fill();
                 }
                 
@@ -5799,7 +5867,7 @@
             if (newStatus === 'malware' || newStatus === 'botnet' || newStatus === 'commandControl') {
                 if (!node.infectedAt) {
                     node.infectedAt = Date.now();
-                    node.pulseDelay = 2000 + Math.random() * 4000; // 2-6 seconds
+                    node.dispatchDelay = 2000 + Math.random() * 4000; // 2-6 seconds delay before dispatch packet can be sent
                     node.spreadDelay = 500 + Math.random() * 2500; // 0.5-3 seconds
                     node.canSpread = Math.random() > 0.05; // 95% chance to spread, 5% chance not to 
                 }
@@ -8417,10 +8485,22 @@
                 return; // Stop here and don't create new pulses.
             }
             
-            const malwareNodes = nodes.filter(n => (n.status === 'malware' || n.status === 'botnet' || n.status === 'commandControl') && n.infectedAt && !n.isTargeted);
+            // Get all infected nodes that are eligible for dispatch
+            const malwareNodes = nodes.filter(n => 
+                (n.status === 'malware' || n.status === 'botnet' || n.status === 'commandControl') && 
+                n.infectedAt && 
+                !n.isTargeted
+            );
             
-            malwareNodes.forEach(node => {
-                if (Date.now() > node.infectedAt + node.pulseDelay) {
+            // Prioritize directly connected infected nodes (children of central node)
+            const directlyConnected = malwareNodes.filter(n => n.parent === rootNode);
+            const indirectlyConnected = malwareNodes.filter(n => n.parent !== rootNode);
+            
+            // Process directly connected nodes first, then indirect ones
+            const prioritizedNodes = [...directlyConnected, ...indirectlyConnected];
+            
+            for (const node of prioritizedNodes) {
+                if (Date.now() > node.infectedAt + node.dispatchDelay) {
                     // Build the path to the target node to check for obstructions
                     const path = [];
                     let currentNode = node;
@@ -8434,7 +8514,7 @@
                     // The root is blue, and the final node is malware, so we check the nodes in between.
                     const isPathClear = path.slice(1, -1).every(pathNode => pathNode.status === 'green');
 
-                    // Only send a pulse if the path is not blocked by a red/yellow node AND central node has supercharged immunity packets
+                    // Only send a pulse if the path is not blocked by a red/yellow node
                     if (isPathClear) {
                         // Check if central node has supercharged immunity packets (unless self-healing = unlimited)
                         if (rootNode.isSelfHealing) {
@@ -8447,7 +8527,7 @@
                             const superchargedPackets = rootNode.attachedImmunityPackets.filter(p => p && p.isSupercharged);
                             
                             if (superchargedPackets.length > 0) {
-                                // Consume one supercharged immunity packet
+                                // Consume one supercharged immunity packet (1:1 ratio)
                                 const consumedPacket = superchargedPackets[0];
                                 consumedPacket.active = false;
                                 rootNode.attachedImmunityPackets = rootNode.attachedImmunityPackets.filter(p => p !== consumedPacket);
@@ -8456,12 +8536,15 @@
                                 dispatchPackets.push(new DispatchPacket(node));
                                 incrementStat('totalDispatchPackets');
                                 node.isTargeted = true;
+                            } else {
+                                // No supercharged packets available - cannot send dispatch
+                                // Stop processing to prevent checking more nodes when resources are depleted
+                                break;
                             }
-                            // If no supercharged packets available, don't send dispatch
                         }
                     }
                 }
-            });
+            }
 
             dispatchPackets.forEach(dispatchPacket => {
                 dispatchPacket.update();
