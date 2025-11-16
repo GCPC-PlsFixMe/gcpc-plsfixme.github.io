@@ -1381,6 +1381,50 @@
         function hardenNode(node) {
             if (node.state !== 'alive') return;
             
+            // Special handling for central node - activate all defense modes
+            if (node.parent === null) {
+                const now = Date.now();
+                let modesActivated = [];
+                
+                // 1. Activate Recovery Shield (15 seconds, 99% resistance)
+                if (!node.hasRecoveryShield) {
+                    node.hasRecoveryShield = true;
+                    node.recoveryShieldStartTime = now;
+                    node.shieldActive = true;
+                    node.shieldOpacity = 0; // Will fade in
+                    modesActivated.push('🛡️ Recovery Shield (15s, 99% resistance)');
+                    logEvent('recoveryShieldActivated', { node });
+                }
+                
+                // 2. Activate Bot Defense Mode (10 seconds, spawns immunity packets)
+                if (!node.botDefenseModeActive && now >= (node.botDefenseCooldownUntil || 0)) {
+                    node.botDefenseModeActive = true;
+                    node.botDefenseModeStart = now;
+                    // Get infected branches for targeting
+                    const infectedBranches = (node.children || []).filter(ch => 
+                        ch && ch.state === 'alive' && 
+                        (ch.status === 'malware' || ch.status === 'botnet' || ch.status === 'commandControl')
+                    );
+                    node.botDefenseTargets = infectedBranches;
+                    modesActivated.push('⚔️ Bot Defense Mode (10s, spawns immunity packets)');
+                }
+                
+                // 3. Self-Healing mode is only activated when infected, so skip it here
+                
+                if (modesActivated.length > 0) {
+                    logEvent('custom', { 
+                        message: `🌟 Central Node Defense Modes Activated:\n${modesActivated.join('\n')}` 
+                    });
+                    createPopParticles(node.x, node.y, colors.blue);
+                } else {
+                    logEvent('custom', { 
+                        message: `⚠️ Central node defense modes are already active or on cooldown!` 
+                    });
+                }
+                return;
+            }
+            
+            // Regular node hardening (firewall → guardian progression)
             if (!node.hasFirewall) {
                 node.hasFirewall = true;
                 logEvent('custom', { message: `🛡️ Firewall activated on node ${node.id}!` });
@@ -1858,15 +1902,31 @@
                     ctx.translate(centralImpactShakeOffsetX, centralImpactShakeOffsetY);
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = mainColorRgba;
-                    if (enableShadows) {
-                        ctx.shadowColor = `rgba(${Math.round(this.currentColor.r)}, ${Math.round(this.currentColor.g)}, ${Math.round(this.currentColor.b)}, 0.7)`;
-                        ctx.shadowBlur = 30;
+                    
+                    // Use yellow color when in self-healing mode
+                    if (this.isSelfHealing) {
+                        const yellowColor = { r: 251, g: 191, b: 36 }; // amber-400
+                        const yellowRgba = `rgba(${yellowColor.r}, ${yellowColor.g}, ${yellowColor.b}, ${this.opacity})`;
+                        ctx.fillStyle = yellowRgba;
+                        if (enableShadows) {
+                            ctx.shadowColor = `rgba(${yellowColor.r}, ${yellowColor.g}, ${yellowColor.b}, 0.7)`;
+                            ctx.shadowBlur = 30;
+                        }
+                    } else {
+                        ctx.fillStyle = mainColorRgba;
+                        if (enableShadows) {
+                            ctx.shadowColor = `rgba(${Math.round(this.currentColor.r)}, ${Math.round(this.currentColor.g)}, ${Math.round(this.currentColor.b)}, 0.7)`;
+                            ctx.shadowBlur = 30;
+                        }
                     }
+                    
                     ctx.fill();
                     ctx.shadowBlur = 0;
                     
-                    if (this.status === 'malware') {
+                    // Self-healing takes priority over malware icon
+                    if (this.isSelfHealing) {
+                        this.drawWrenchIcon(); // Show wrench during self-healing
+                    } else if (this.status === 'malware') {
                         this.drawMalwareIcon();
                     } else {
                         this.drawGlobe(); // Also handles its own defense pulse
@@ -2144,6 +2204,20 @@
                 ctx.restore();
             }
 
+            drawWrenchIcon() {
+                const iconSize = this.radius * 1.2; // Match other icon sizes
+                if (iconSize < 4) return;
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = `rgba(0, 0, 0, ${this.opacity})`; // Black wrench emoji
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `${iconSize}px sans-serif`;
+                ctx.fillText('🛠️', 0, iconSize * 0.05); // Slight vertical adjustment for centering
+                ctx.restore();
+            }
+
             drawSkullIcon() {
                 const iconSize = this.radius * 1.2;
                 if (iconSize < 4) return;
@@ -2396,7 +2470,8 @@
                         
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, pulseRadius, 0, Math.PI * 2);
-                        ctx.strokeStyle = `rgba(${colors.green.r}, ${colors.green.g}, ${colors.green.b}, ${pulseOpacity})`;
+                        const redPulse = colors.red;
+                        ctx.strokeStyle = `rgba(${redPulse.r}, ${redPulse.g}, ${redPulse.b}, ${pulseOpacity})`;
                         ctx.lineWidth = 5 * (1 - progress);
                         ctx.stroke();
                     } else {
@@ -3206,23 +3281,54 @@
                             target.isDefending = true;
                             target.defenseStartTime = Date.now();
                             
+                            // Check if central node has supercharged immunity packets (requires 2 to buffer)
+                            const superchargedPackets = target.attachedImmunityPackets.filter(p => p && p.isSupercharged);
+                            const hasDefenseResources = superchargedPackets.length >= 2;
+                            
                             // Now, determine the outcome.
                             // Recovery shield provides 99% resistance (1% failure), otherwise 10% failure
+                            // Normal defense chance is NOT affected by packet availability
                             const failureChance = target.hasRecoveryShield ? 0.01 : 0.1;
+                            
                             if (target.hasRecoveryShield) {
                                 logEvent('recoveryShieldAttack', { target });
                             }
-                            if (Math.random() < failureChance) {
-                                updateNodeStatus(target, 'malware');
-                                // If recovery shield was active but failed, it shatters
-                                if (target.hasRecoveryShield) {
-                                    target.hasRecoveryShield = false;
-                                    target.shieldCracking = true;
-                                    target.shieldCrackProgress = 0;
-                                    target.createShieldFragments();
+                            
+                            const attackSucceeds = Math.random() < failureChance;
+                            
+                            if (attackSucceeds) {
+                                // Attack succeeded - check if we have packets to buffer the infection
+                                if (hasDefenseResources) {
+                                    // Consume 2 packets to prevent infection (last-ditch buffer)
+                                    for (let i = 0; i < 2 && superchargedPackets.length > 0; i++) {
+                                        const consumedPacket = superchargedPackets[i];
+                                        consumedPacket.active = false;
+                                        target.attachedImmunityPackets = target.attachedImmunityPackets.filter(p => p !== consumedPacket);
+                                    }
+                                    logEvent('custom', { message: '🛡️ Central node consumed 2 supercharged packets to buffer incoming attack!' });
+                                } else {
+                                    // No packets to buffer - infection succeeds
+                                    updateNodeStatus(target, 'malware');
+                                    logEvent('centralUnderAttack'); // Warning that defense resources depleted
+                                    // If recovery shield was active but failed, it shatters
+                                    if (target.hasRecoveryShield) {
+                                        target.hasRecoveryShield = false;
+                                        target.shieldCracking = true;
+                                        target.shieldCrackProgress = 0;
+                                        target.createShieldFragments();
+                                    }
                                 }
                             } else {
-                                // Defense successful! Only spawn immunity packets if in bot defense mode
+                                // Defense successful! Consume 2 supercharged immunity packets if available
+                                if (hasDefenseResources) {
+                                    for (let i = 0; i < 2 && superchargedPackets.length > 0; i++) {
+                                        const consumedPacket = superchargedPackets[i];
+                                        consumedPacket.active = false;
+                                        target.attachedImmunityPackets = target.attachedImmunityPackets.filter(p => p !== consumedPacket);
+                                    }
+                                }
+                                
+                                // Spawn immunity packets if in bot defense mode
                                 if (target.botDefenseModeActive) {
                                     spawnCentralImmunityPackets(target);
                                 }
@@ -3389,29 +3495,38 @@
             }
 
             update() {
-                // Check if edge has been removed from edges array (due to remeshing)
+                // Check if edge or nodes are invalid/removed
                 const edgeExists = edges.includes(this.edge);
+                const fromNodeValid = this.edge.from && (this.edge.from.state === 'alive' || this.edge.from.state === 'spawning');
+                const toNodeValid = this.edge.to && (this.edge.to.state === 'alive' || this.edge.to.state === 'spawning');
                 
-                if (!edgeExists || !this.edge.from || !this.edge.to || 
-                    this.edge.from.state !== 'alive' || this.edge.to.state !== 'alive') {
-                    // Enter drifting mode instead of immediately deactivating
+                // Drop packet if edge removed or either node is retracting/drifting/dead
+                if (!edgeExists || !fromNodeValid || !toNodeValid) {
+                    // Enter drifting mode with visual "packet drop" effect
                     if (!this.isDrifting) {
                         this.isDrifting = true;
-                        // Scatter in a random direction
+                        // Scatter in a random direction with gravity effect
                         const randomAngle = Math.random() * Math.PI * 2;
-                        const driftSpeed = 1 + Math.random() * 2; // Random speed between 1 and 3
+                        const driftSpeed = 2 + Math.random() * 3; // Faster drift for visibility
                         this.driftVelocityX = Math.cos(randomAngle) * driftSpeed;
-                        this.driftVelocityY = Math.sin(randomAngle) * driftSpeed;
+                        this.driftVelocityY = Math.sin(randomAngle) * driftSpeed + 1; // Slight downward bias
+                        
+                        // Visual feedback: create small particle burst
+                        createPopParticles(this.x, this.y, this.color, 3);
                         
                         // Count as dropped packet
-                        incrementStat('packetsDropped');
+                        if (!this.dropCheckPerformed) {
+                            incrementStat('packetsDropped');
+                            this.dropCheckPerformed = true;
+                        }
                     }
                     
-                    // Continue drifting
+                    // Continue drifting with fade out
                     if (this.isDrifting) {
                         this.x += this.driftVelocityX;
                         this.y += this.driftVelocityY;
-                        this.opacity -= 0.04; // Fade out twice as fast (was 0.02)
+                        this.driftVelocityY += 0.1; // Gravity acceleration
+                        this.opacity -= 0.06; // Faster fade out for dropped packets
                         
                         if (this.opacity <= 0) {
                             this.active = false;
@@ -3602,7 +3717,7 @@
                 this.active = true;
                 this.color = { ...colors.white };
                 this.radius = 1.5;
-                this.baseSpeed = 0.002; // Slower than data packets
+                this.baseSpeed = 0.003; // Standardized immunity packet speed
                 this.speed = this.baseSpeed * packetSpeedMultiplier;
                 this.opacity = 0.9;
                 this.lateralOffset = direction === 1 ? 5 : -5;
@@ -3711,10 +3826,14 @@
                     return;
                 }
                 
-                // Check if edge still exists
+                // Check if edge or nodes are invalid/removed
                 const edgeExists = edges.includes(this.edge);
-                if (!edgeExists || !this.edge.from || !this.edge.to || 
-                    this.edge.from.state !== 'alive' || this.edge.to.state !== 'alive') {
+                const fromNodeValid = this.edge.from && (this.edge.from.state === 'alive' || this.edge.from.state === 'spawning');
+                const toNodeValid = this.edge.to && (this.edge.to.state === 'alive' || this.edge.to.state === 'spawning');
+                
+                if (!edgeExists || !fromNodeValid || !toNodeValid) {
+                    // Visual feedback for dropped immunity packet
+                    createPopParticles(this.x, this.y, this.color, 3);
                     this.active = false;
                     return;
                 }
@@ -4078,10 +4197,8 @@
                     return;
                 }
                 this.progress = 0;
-                // Variable speed: between 0.0046875 and 0.009375
-                const minSpeed = 0.0046875;
-                const maxSpeed = 0.009375;
-                const baseSpeed = minSpeed + Math.random() * (maxSpeed - minSpeed);
+                // Standardized dispatch packet speed
+                const baseSpeed = 0.006; // Consistent speed for all dispatch packets
                 const pathLength = Math.max(1, this.path.length - 1); // Number of segments
                 this.speed = (baseSpeed / pathLength) * packetSpeedMultiplier; // Longer paths = slower progress per frame
                 this.radius = 2.5; // Dispatch packet size (reduced by 50%)
@@ -4239,9 +4356,8 @@
                 this.target = targetNode;
                 this.path = this.findPath(sourceNode, targetNode);
                 this.progress = 0;
-                // Increased by 125% from 0.00375 to 0.0084375
-                // Now faster than dispatch packet (0.003) and approaching original speed (0.012)
-                this.speed = 0.0084375 * packetSpeedMultiplier;
+                // Standardized attack packet speed (Ping of Death)
+                this.speed = 0.008 * packetSpeedMultiplier;
                 this.radius = 6;
                 this.x = sourceNode.x;
                 this.y = sourceNode.y;
@@ -4311,6 +4427,19 @@
             }
 
             update() {
+                // Validate source and target nodes still exist and are valid
+                if (!this.source || !this.target || 
+                    this.source.state === 'retracting' || this.source.state === 'drifting' ||
+                    this.target.state === 'retracting' || this.target.state === 'drifting') {
+                    // Path no longer valid - drop packet with visual feedback
+                    createPopParticles(this.x, this.y, { r: 220, g: 38, b: 38 }, 5);
+                    this.state = 'finished';
+                    if (this.source && this.source.activePingOfDeath === this) {
+                        this.source.activePingOfDeath = null;
+                    }
+                    return;
+                }
+                
                 // Update spike rotation
                 this.spikeRotation += 0.1;
                 
@@ -4379,6 +4508,28 @@
                 const segmentProgress = (clampedProgress * totalLength) - currentSegmentIndex;
                 const fromNode = this.path[currentSegmentIndex];
                 const toNode = this.path[currentSegmentIndex + 1];
+                
+                // Validate current segment nodes are still valid
+                if (!fromNode || !toNode || 
+                    fromNode.state === 'retracting' || fromNode.state === 'drifting' ||
+                    toNode.state === 'retracting' || toNode.state === 'drifting') {
+                    // Current segment invalid - try to recalculate path
+                    const newPath = this.findPath(this.source, this.target);
+                    if (!newPath || newPath.length === 0) {
+                        // No valid path - drop packet
+                        createPopParticles(this.x, this.y, { r: 220, g: 38, b: 38 }, 5);
+                        this.state = 'finished';
+                        if (this.source.activePingOfDeath === this) {
+                            this.source.activePingOfDeath = null;
+                        }
+                        return;
+                    }
+                    // Use new path and restart from beginning
+                    this.path = newPath;
+                    this.progress = 0;
+                    this.lastSegmentIndex = -1;
+                    return;
+                }
                 
                 // Recalculate path when transitioning to a new segment to handle topology changes
                 // Only recalculate if we've moved significantly (at least crossed into next segment)
@@ -4576,7 +4727,7 @@
                 this.target = targetNode;
                 this.path = this.findPath(sourceNode, targetNode);
                 this.progress = 0;
-                this.speed = 0.0084375 * packetSpeedMultiplier; // Same speed as ping of death
+                this.speed = 0.008 * packetSpeedMultiplier; // Standardized phishing packet speed
                 this.radius = 6;
                 this.x = sourceNode.x;
                 this.y = sourceNode.y;
@@ -4643,6 +4794,16 @@
 
             update() {
                 if (this.state !== 'active') return;
+                
+                // Validate source and target nodes still exist and are valid
+                if (!this.source || !this.target || 
+                    this.source.state === 'retracting' || this.source.state === 'drifting' ||
+                    this.target.state === 'retracting' || this.target.state === 'drifting') {
+                    // Path no longer valid - drop packet with visual feedback
+                    createPopParticles(this.x, this.y, colors.malware, 5);
+                    this.state = 'finished';
+                    return;
+                }
                 
                 this.spikeRotation += 0.1;
                 
@@ -4724,6 +4885,25 @@
                 const segmentProgress = (clampedProgress * totalLength) - currentSegmentIndex;
                 const fromNode = this.path[currentSegmentIndex];
                 const toNode = this.path[currentSegmentIndex + 1];
+                
+                // Validate current segment nodes are still valid
+                if (!fromNode || !toNode || 
+                    fromNode.state === 'retracting' || fromNode.state === 'drifting' ||
+                    toNode.state === 'retracting' || toNode.state === 'drifting') {
+                    // Current segment invalid - try to recalculate path
+                    const newPath = this.findPath(this.source, this.target);
+                    if (!newPath || newPath.length === 0) {
+                        // No valid path - drop packet
+                        createPopParticles(this.x, this.y, colors.malware, 5);
+                        this.state = 'finished';
+                        return;
+                    }
+                    // Use new path and restart from beginning
+                    this.path = newPath;
+                    this.progress = 0;
+                    this.lastSegmentIndex = -1;
+                    return;
+                }
                 
                 // Recalculate path when transitioning to a new segment
                 if (this.lastSegmentIndex !== undefined && this.lastSegmentIndex !== currentSegmentIndex) {
@@ -4870,7 +5050,7 @@
                 // Reverse the attack path for traceback
                 this.path = attackPath ? [...attackPath].reverse() : null;
                 this.progress = 0;
-                this.speed = 0.015 * packetSpeedMultiplier; // Faster than attack packets
+                this.speed = 0.012 * packetSpeedMultiplier; // Standardized counter-strike speed (faster than attacks)
                 this.radius = 5;
                 this.x = guardianNode.x;
                 this.y = guardianNode.y;
@@ -5044,9 +5224,28 @@
             const maxDimension = Math.max(canvas.width, canvas.height) || 1;
             for (let i = 0; i < GALAXY_NEBULA_COUNT; i++) {
                 const color = nebulaPalette[Math.floor(Math.random() * nebulaPalette.length)];
-                const baseRadius = randomRange(maxDimension * 0.28, maxDimension * 0.45);
+                const baseRadius = randomRange(maxDimension * 0.2, maxDimension * 0.35);
                 const driftAngle = Math.random() * Math.PI * 2;
                 const driftSpeed = randomRange(4, 12);
+                
+                // Create multiple cloud clusters for irregular nebula structure
+                const numClouds = Math.floor(randomRange(3, 7)); // 3-6 overlapping clouds
+                const clouds = [];
+                for (let j = 0; j < numClouds; j++) {
+                    clouds.push({
+                        // Offset from nebula center
+                        offsetX: randomRange(-baseRadius * 0.4, baseRadius * 0.4),
+                        offsetY: randomRange(-baseRadius * 0.4, baseRadius * 0.4),
+                        // Size variation
+                        sizeScale: randomRange(0.3, 1.0),
+                        // Opacity variation for depth
+                        opacityScale: randomRange(0.6, 1.0),
+                        // Individual morphing
+                        morphPhase: Math.random() * Math.PI * 2,
+                        morphSpeed: randomRange(0.0002, 0.0006)
+                    });
+                }
+                
                 galaxyNebulae.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
@@ -5055,7 +5254,15 @@
                     pulseSpeed: randomRange(0.25, 0.6),
                     pulsePhase: Math.random() * Math.PI * 2,
                     vx: Math.cos(driftAngle) * driftSpeed,
-                    vy: Math.sin(driftAngle) * driftSpeed
+                    vy: Math.sin(driftAngle) * driftSpeed,
+                    clouds: clouds, // Array of cloud clusters
+                    // Overall morphing parameters
+                    morphSpeed1: randomRange(0.0003, 0.0008),
+                    morphSpeed2: randomRange(0.0004, 0.0009),
+                    morphSpeed3: randomRange(0.0002, 0.0006),
+                    morphPhase1: Math.random() * Math.PI * 2,
+                    morphPhase2: Math.random() * Math.PI * 2,
+                    morphPhase3: Math.random() * Math.PI * 2
                 });
             }
 
@@ -5092,13 +5299,28 @@
                 { r: 147, g: 197, b: 253 },
                 { r: 244, g: 114, b: 182 }
             ];
+            const novaX = randomRange(0, canvas.width);
+            const novaY = randomRange(0, canvas.height);
+            const novaColor = novaPalette[Math.floor(Math.random() * novaPalette.length)];
+            
+            const flareDuration = 8000;
             galaxyNovas.push({
-                x: randomRange(0, canvas.width),
-                y: randomRange(0, canvas.height),
+                x: novaX,
+                y: novaY,
                 start: now,
-                duration: randomRange(1200, 2200),
+                duration: flareDuration, // Match lens flare duration so nova doesn't get removed early
                 maxRadius: randomRange(Math.max(canvas.width, canvas.height) * 0.08, Math.max(canvas.width, canvas.height) * 0.14),
-                color: novaPalette[Math.floor(Math.random() * novaPalette.length)]
+                color: novaColor,
+                // Lens flare effect
+                lensFlare: {
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: 0.001, // Slow rotation
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    pulseSpeed: 0.015, // Slower pulse (about 1 pulse per 7 seconds at 60fps)
+                    lingerDuration: flareDuration, // Lens flare lasts 8 seconds
+                    rayLength: randomRange(40, 80),
+                    haloSize: randomRange(25, 45)
+                }
             });
         }
 
@@ -5131,15 +5353,49 @@
                 if (nebula.x > canvas.width + maxRadius) nebula.x = -maxRadius;
                 if (nebula.y < -maxRadius) nebula.y = canvas.height + maxRadius;
                 if (nebula.y > canvas.height + maxRadius) nebula.y = -maxRadius;
-                const radius = nebula.baseRadius * pulse;
-                const gradient = ctx.createRadialGradient(nebula.x, nebula.y, 0, nebula.x, nebula.y, radius);
-                gradient.addColorStop(0, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, 0.35)`);
-                gradient.addColorStop(0.6, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, 0.16)`);
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(nebula.x, nebula.y, radius, 0, Math.PI * 2);
-                ctx.fill();
+                const baseRadius = nebula.baseRadius * pulse;
+                
+                // Update overall morph phases
+                nebula.morphPhase1 += nebula.morphSpeed1;
+                nebula.morphPhase2 += nebula.morphSpeed2;
+                nebula.morphPhase3 += nebula.morphSpeed3;
+                
+                // Calculate overall wobble
+                const morph1 = Math.sin(nebula.morphPhase1);
+                const morph2 = Math.sin(nebula.morphPhase2);
+                const globalOffsetX = morph1 * baseRadius * 0.05;
+                const globalOffsetY = morph2 * baseRadius * 0.05;
+                
+                // Draw each cloud cluster to create irregular nebula structure
+                nebula.clouds.forEach(cloud => {
+                    // Update individual cloud morph
+                    cloud.morphPhase += cloud.morphSpeed;
+                    
+                    // Individual cloud wobble and breathing
+                    const cloudMorph = Math.sin(cloud.morphPhase);
+                    const cloudWobbleX = cloudMorph * baseRadius * 0.03;
+                    const cloudWobbleY = Math.cos(cloud.morphPhase * 1.3) * baseRadius * 0.03;
+                    const cloudBreathing = 1 + cloudMorph * 0.08;
+                    
+                    // Calculate cloud position and size
+                    const cloudX = nebula.x + globalOffsetX + cloud.offsetX + cloudWobbleX;
+                    const cloudY = nebula.y + globalOffsetY + cloud.offsetY + cloudWobbleY;
+                    const cloudRadius = baseRadius * cloud.sizeScale * cloudBreathing;
+                    
+                    // Draw cloud with radial gradient
+                    const gradient = ctx.createRadialGradient(cloudX, cloudY, 0, cloudX, cloudY, cloudRadius);
+                    const baseOpacity = 0.28 * cloud.opacityScale;
+                    const midOpacity = 0.14 * cloud.opacityScale;
+                    
+                    gradient.addColorStop(0, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, ${baseOpacity})`);
+                    gradient.addColorStop(0.5, `rgba(${nebula.color.r}, ${nebula.color.g}, ${nebula.color.b}, ${midOpacity})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(cloudX, cloudY, cloudRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
             });
             ctx.restore();
 
@@ -5242,12 +5498,18 @@
                     comet.vy += normalY * tangentialAccel * deltaSeconds;
                 }
 
+                // Calculate tail properties based on distance to center
                 const normX = dirX / dirMag;
                 const normY = dirY / dirMag;
-                const tailEndX = comet.x + normX * comet.tailDistance;
-                const tailEndY = comet.y + normY * comet.tailDistance;
-
-                const brightness = 0.35 + centerFactor * 0.65;
+                
+                // Tail grows as comet approaches center (50% longer when near center)
+                const tailLength = comet.tailDistance * (1 + centerFactor * 0.5);
+                
+                // Brightness increases dramatically as comet approaches center
+                // Nearly transparent at edges (0.05), bright at center (0.8)
+                const baseBrightness = 0.05 + centerFactor * 0.75;
+                
+                // Color tints toward white as it approaches center
                 const tintAmount = centerFactor * 0.8;
                 const tintedColor = {
                     r: Math.round(comet.color.r + (255 - comet.color.r) * tintAmount),
@@ -5255,20 +5517,59 @@
                     b: Math.round(comet.color.b + (255 - comet.color.b) * tintAmount)
                 };
 
-                const gradient = ctx.createLinearGradient(comet.x, comet.y, tailEndX, tailEndY);
-                gradient.addColorStop(0, `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${0.2 + brightness * 0.8})`);
-                gradient.addColorStop(1, 'rgba(20, 20, 20, 0)');
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = comet.radius * (1.4 + centerFactor * 1.2);
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(comet.x, comet.y);
-                ctx.lineTo(tailEndX, tailEndY);
-                ctx.stroke();
+                // Draw tail as stream of tiny fading particles with animation
+                // Fixed particle count to prevent stutter - elongate particles instead
+                const FIXED_PARTICLE_COUNT = 15;
+                const baseParticleSize = 0.8; // Base particle size (constant)
+                
+                // Animation offset using time for flowing effect
+                const animationSpeed = 0.0001; // Speed of particle flow animation (slower)
+                const animationOffset = (now * animationSpeed) % 1; // 0-1 cycling value
+                
+                for (let i = 0; i < FIXED_PARTICLE_COUNT; i++) {
+                    // Distribute particles evenly with animation offset
+                    // Add small offset per particle to prevent all particles from wrapping at once
+                    const particlePhaseOffset = i / FIXED_PARTICLE_COUNT;
+                    const t = (particlePhaseOffset + animationOffset) % 1; // 0 at head, 1 at tail end
+                    
+                    // Use smooth position without additional modulo to prevent stutter
+                    const animatedT = t;
+                    const particleX = comet.x + normX * tailLength * animatedT;
+                    const particleY = comet.y + normY * tailLength * animatedT;
+                    
+                    // Fade out along tail length (bright at head, transparent at end)
+                    const tailFade = 1 - Math.pow(animatedT, 1.5);
+                    const particleAlpha = baseBrightness * tailFade;
+                    
+                    // Elongate particles based on centerFactor (1.0x to 2.5x)
+                    // Particles stretch more as comet approaches center
+                    const elongationFactor = 1.0 + centerFactor * 1.5;
+                    
+                    // Particles also get larger near head
+                    const sizeMultiplier = 1 - Math.pow(animatedT, 0.8); // 1.0 at head, ~0 at tail
+                    const particleSize = baseParticleSize * (0.3 + sizeMultiplier * 1.2) * elongationFactor;
+                    
+                    // Draw elongated particle (ellipse stretched along tail direction)
+                    ctx.save();
+                    ctx.translate(particleX, particleY);
+                    
+                    // Calculate angle of tail direction
+                    const angle = Math.atan2(normY, normX);
+                    ctx.rotate(angle);
+                    
+                    // Draw stretched ellipse
+                    ctx.fillStyle = `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${particleAlpha})`;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, particleSize * elongationFactor, particleSize, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
 
-                ctx.fillStyle = `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${0.25 + brightness * 0.7})`;
+                // Draw comet head (brighter than tail)
+                const headAlpha = baseBrightness * 1.5; // Head is 50% brighter than tail start
+                ctx.fillStyle = `rgba(${tintedColor.r}, ${tintedColor.g}, ${tintedColor.b}, ${headAlpha})`;
                 ctx.beginPath();
-                ctx.arc(comet.x, comet.y, comet.radius, 0, Math.PI * 2);
+                ctx.arc(comet.x, comet.y, comet.radius * (0.7 + centerFactor * 0.5), 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();
@@ -5320,6 +5621,105 @@
                 ctx.beginPath();
                 ctx.arc(nova.x, nova.y, radius, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Draw lens flare effect at center
+                const flare = nova.lensFlare;
+                const flareElapsed = now - nova.start;
+                const flareProgress = flareElapsed / flare.lingerDuration;
+                
+                if (flareProgress < 1) {
+                    // Update flare animation
+                    flare.rotation += flare.rotationSpeed;
+                    flare.pulsePhase += flare.pulseSpeed;
+                    
+                    // Pulsing intensity (more dramatic range for visibility)
+                    const pulse = 0.5 + Math.sin(flare.pulsePhase) * 0.5; // Pulses between 0.0 and 1.0
+                    
+                    // Fade in quickly, hold, then fade out very gradually
+                    let lifetimeAlpha;
+                    if (flareProgress < 0.1) {
+                        // Quick fade in over first 10% (0.8 seconds)
+                        lifetimeAlpha = flareProgress / 0.1;
+                    } else if (flareProgress > 0.4) {
+                        // Very gradual fade out over last 60% (4.8 seconds)
+                        const fadeProgress = (flareProgress - 0.4) / 0.6;
+                        lifetimeAlpha = 1 - (fadeProgress * fadeProgress); // Quadratic easing
+                    } else {
+                        // Hold full brightness for 30% (2.4 seconds)
+                        lifetimeAlpha = 1;
+                    }
+                    
+                    const flareAlpha = Math.max(0.05, lifetimeAlpha * pulse); // Minimum 5% visibility
+                    
+                    ctx.save();
+                    ctx.translate(nova.x, nova.y);
+                    
+                    // Draw cross-shaped light rays (diffraction spikes)
+                    ctx.rotate(flare.rotation);
+                    for (let i = 0; i < 4; i++) {
+                        const angle = (i * Math.PI / 2);
+                        ctx.save();
+                        ctx.rotate(angle);
+                        
+                        // Draw ray as gradient line
+                        const rayGradient = ctx.createLinearGradient(0, 0, flare.rayLength, 0);
+                        rayGradient.addColorStop(0, `rgba(255, 255, 255, ${flareAlpha * 0.9})`);
+                        rayGradient.addColorStop(0.3, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, ${flareAlpha * 0.6})`);
+                        rayGradient.addColorStop(1, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, 0)`);
+                        
+                        ctx.strokeStyle = rayGradient;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(flare.rayLength, 0);
+                        ctx.stroke();
+                        
+                        // Add thinner bright core to ray
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${flareAlpha * 0.8})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(flare.rayLength * 0.7, 0);
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                    }
+                    ctx.restore();
+                    
+                    // Draw bright central point
+                    const centerGradient = ctx.createRadialGradient(nova.x, nova.y, 0, nova.x, nova.y, 8);
+                    centerGradient.addColorStop(0, `rgba(255, 255, 255, ${flareAlpha})`);
+                    centerGradient.addColorStop(0.5, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, ${flareAlpha * 0.8})`);
+                    centerGradient.addColorStop(1, `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, 0)`);
+                    ctx.fillStyle = centerGradient;
+                    ctx.beginPath();
+                    ctx.arc(nova.x, nova.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw circular halo ring (chromatic aberration effect)
+                    ctx.save();
+                    // Blue halo (inner)
+                    ctx.strokeStyle = `rgba(147, 197, 253, ${flareAlpha * 0.4})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(nova.x, nova.y, flare.haloSize * 0.9, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Main color halo (middle)
+                    ctx.strokeStyle = `rgba(${nova.color.r}, ${nova.color.g}, ${nova.color.b}, ${flareAlpha * 0.5})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(nova.x, nova.y, flare.haloSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Red halo (outer - chromatic aberration)
+                    ctx.strokeStyle = `rgba(248, 113, 113, ${flareAlpha * 0.3})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(nova.x, nova.y, flare.haloSize * 1.1, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
             }
             ctx.restore();
 
@@ -5746,8 +6146,8 @@
         }
         
         function spawnCentralImmunityPackets(centralNode) {
-            // Central node spawns normal immunity packets like firewall nodes
-            // Spawn on all edges connected to the central node
+            // Bot Defense Mode spawns SUPERCHARGED immunity packets (infinite during mode)
+            // These packets will return to central node and become part of defense buffer
             if (!centralNode || centralNode.parent !== null) return;
             
             edges.forEach(edge => {
@@ -5759,7 +6159,7 @@
                 const otherNode = edge.from === centralNode ? edge.to : edge.from;
                 if (!otherNode || otherNode.state !== 'alive') return;
                 
-                // Spawn normal immunity packets in both directions on this edge
+                // Spawn SUPERCHARGED immunity packets during Bot Defense Mode
                 // Spawn 2-3 packets per edge for a noticeable response
                 const packetCount = 2 + Math.floor(Math.random() * 2); // 2-3 packets
                 
@@ -5767,6 +6167,8 @@
                     // Spawn going away from central (direction based on edge orientation)
                     const direction = edge.from === centralNode ? 1 : -1;
                     const packet = new ImmunityPacket(edge, direction);
+                    packet.isSupercharged = true; // Bot Defense Mode creates supercharged packets
+                    packet.radius = Math.max(packet.radius, 3); // Larger radius for supercharged
                     packet.progress = 0.05 + (i * 0.1); // Stagger slightly
                     immunityPackets.push(packet);
                     incrementStat('totalImmunityPackets');
@@ -6830,7 +7232,7 @@
                 const target = aliveNodes[Math.floor(Math.random() * aliveNodes.length)];
                 if (target.status === 'green') updateNodeStatus(target, 'red');
             }
-            if (Math.random() < (0.05 * attackFreqMultiplier)) { // Malware infection rate
+            if (Math.random() < (0.02 * attackFreqMultiplier)) { // Malware infection rate (reduced from 5% to 2%)
                 const target = aliveNodes[Math.floor(Math.random() * aliveNodes.length)];
                 if (target.status === 'green' && !target.isTargeted && target.remediationState === 'none') {
                     updateNodeStatus(target, 'malware');
@@ -7737,7 +8139,7 @@
                     }
 
                     packet.baseSpeed = IMMUNITY_STREAM_SPEED;
-                    packet.speed = IMMUNITY_STREAM_SPEED;
+                    packet.speed = IMMUNITY_STREAM_SPEED * packetSpeedMultiplier;
                     packet.opacity = 1;
                     packet.lateralOffset = direction === 1 ? 6 : -6;
                     immunityPackets.push(packet);
@@ -7913,7 +8315,7 @@
             packet.isSupercharged = true;
             packet.isSeeking = true;
             packet.targetNode = targetNode;
-            packet.speed = packet.baseSpeed * 2.5;
+            packet.speed = packet.baseSpeed * 2.5 * packetSpeedMultiplier;
             packet.opacity = 1;
             packet.radius = 3;
             immunityPackets.push(packet);
@@ -8253,11 +8655,21 @@
                                 }
                                 
                                 if (path.length > 0) {
-                                    ccNode.ddosAttackPaths.push({
+                                    const attackPath = {
                                         botnet: botnet,
                                         path: path,
                                         startTime: now,
                                         target: ccNode.ddosTargetBranch
+                                    };
+                                    ccNode.ddosAttackPaths.push(attackPath);
+                                    
+                                    // Performance: Cache DDOS data on edges for faster rendering
+                                    path.forEach(pathSegment => {
+                                        pathSegment.edge.ddosAttackData = {
+                                            attackPath: attackPath,
+                                            edgeInPath: pathSegment,
+                                            startTime: now
+                                        };
                                     });
                                 }
                             });
@@ -8280,8 +8692,15 @@
                             });
                         }
                         
-                        // Clean up DDOS attack paths
+                        // Clean up DDOS attack paths and clear cached edge data
                         if (ccNode.ddosAttackPaths) {
+                            ccNode.ddosAttackPaths.forEach(attackPath => {
+                                attackPath.path.forEach(pathSegment => {
+                                    if (pathSegment.edge) {
+                                        delete pathSegment.edge.ddosAttackData;
+                                    }
+                                });
+                            });
                             ccNode.ddosAttackPaths = [];
                         }
                         
@@ -8433,41 +8852,40 @@
                     }
                 }
 
-                // Scan for nearby infected nodes
-                const nearbyInfected = nodes.filter(n => {
+                // Threat hunting: prioritize directly connected infected nodes
+                const connectedInfected = nodes.filter(n => {
                     if (n.state !== 'alive') return false;
                     if (n.status !== 'malware' && n.status !== 'botnet' && n.status !== 'commandControl') return false;
+                    if (n.isTargeted) return false; // Skip if already being remediated
                     
-                    const dx = n.x - guardian.x;
-                    const dy = n.y - guardian.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    // Check if directly connected to guardian
+                    const isDirectlyConnected = edges.some(edge => 
+                        (edge.from === guardian && edge.to === n) || 
+                        (edge.from === n && edge.to === guardian)
+                    );
                     
-                    return distance <= THREAT_SCAN_RADIUS;
+                    return isDirectlyConnected;
                 });
 
-                if (nearbyInfected.length > 0) {
-                    // Target the closest infected node
-                    nearbyInfected.sort((a, b) => {
-                        const distA = Math.sqrt((a.x - guardian.x) ** 2 + (a.y - guardian.y) ** 2);
-                        const distB = Math.sqrt((b.x - guardian.x) ** 2 + (b.y - guardian.y) ** 2);
-                        return distA - distB;
-                    });
-
-                    const target = nearbyInfected[0];
+                if (connectedInfected.length > 0) {
+                    // Target the first directly connected infected node
+                    const target = connectedInfected[0];
                     
-                    // Visual scan pulse effect
-                    createPopParticles(guardian.x, guardian.y, { r: 96, g: 165, b: 250 });
-                    
-                    // Send targeted immunity packet
-                    const immunityPacket = new ImmunityPacket(
-                        edges.find(e => e.from === guardian || e.to === guardian) || { from: guardian, to: guardian },
-                        1
-                    );
-                    immunityPacket.targetNode = target;
-                    immunityPacket.isTargeted = true;
-                    immunityPackets.push(immunityPacket);
-                    
-                    logEvent('custom', { message: `🔍 Guardian ${guardian.id} detected and targeting infected node ${target.id}!` });
+                    // Build path to target for dispatch packet
+                    const path = buildNodePath(guardian, target);
+                    if (path && path.length >= 2) {
+                        // Visual scan pulse effect
+                        createPopParticles(guardian.x, guardian.y, { r: 96, g: 165, b: 250 });
+                        
+                        // Send dispatch packet for remediation
+                        const dispatch = new DispatchPacket(target, guardian);
+                        if (dispatch.state !== 'finished') {
+                            dispatchPackets.push(dispatch);
+                            incrementStat('totalDispatchPackets');
+                            target.isTargeted = true;
+                            logEvent('custom', { message: `🔍 Guardian ${guardian.id} hunting threat: dispatched remediation to connected node ${target.id}!` });
+                        }
+                    }
                 }
             });
         }
@@ -8625,22 +9043,9 @@
                 const forwardInfection = fromNode.spreadingInfections?.find(i => i.target === toNode);
                 const backwardInfection = toNode.spreadingInfections?.find(i => i.target === fromNode);
 
-                // Check if this edge is part of an active DDOS attack path
-                let ddosAttackOnEdge = null;
-                nodes.forEach(n => {
-                    if (n.status === 'commandControl' && n.ddosState === 'active' && n.ddosAttackPaths) {
-                        n.ddosAttackPaths.forEach(attackPath => {
-                            const edgeInPath = attackPath.path.find(p => p.edge === edge);
-                            if (edgeInPath) {
-                                ddosAttackOnEdge = {
-                                    attackPath: attackPath,
-                                    edgeInPath: edgeInPath,
-                                    startTime: attackPath.startTime
-                                };
-                            }
-                        });
-                    }
-                });
+                // Performance: Check if this edge is part of an active DDOS attack path
+                // Use edge property to cache DDOS state instead of searching all nodes
+                let ddosAttackOnEdge = edge.ddosAttackData || null;
 
                 if (ddosAttackOnEdge) {
                     // DDOS attack on this edge: dark red base with bright red flowing animation
