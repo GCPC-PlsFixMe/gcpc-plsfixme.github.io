@@ -46,7 +46,7 @@
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
-                    <a href="/projects/" class="nav-link">
+                    <a href="/#projects" class="nav-link">
                         <i class="fas fa-code-branch"></i>
                         <span>Projects</span>
                     </a>
@@ -54,11 +54,7 @@
                         <i class="fas fa-book"></i>
                         <span>Documents</span>
                     </a>
-                    <a href="/rabbit-hole/" class="nav-link">
-                        <i class="fas fa-flask"></i>
-                        <span>Rabbit Hole</span>
-                    </a>
-                    <a href="/about/" class="nav-link">
+                    <a href="/#about" class="nav-link">
                         <i class="fas fa-info-circle"></i>
                         <span>About</span>
                     </a>

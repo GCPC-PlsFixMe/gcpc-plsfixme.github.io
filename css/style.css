@@ -494,7 +494,7 @@ h1 .heart {
 }
 
 /* Document Grid */
-.document-grid, .experiment-grid {
+.document-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
@@ -510,25 +510,10 @@ h1 .heart {
     border: 1px solid rgba(255, 165, 0, 0.2);
 }
 
-.experiment-card {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 1.5rem;
-    text-align: center;
-    transition: var(--transition);
-    border: 1px solid rgba(255, 0, 255, 0.2);
-}
-
 .document-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     border-color: #FFA500;
-}
-
-.experiment-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    border-color: #ff00ff;
 }
 
 .document-card i {
@@ -538,15 +523,8 @@ h1 .heart {
     transition: var(--transition);
 }
 
-.experiment-card i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: #ff00ff; /* Magenta for Rabbit Hole section */
-    transition: var(--transition);
-}
-
 .document-card:hover i,
-.experiment-card:hover i {
+.document-card:hover i {
     color: #ffffff;
 }
 
@@ -569,75 +547,19 @@ h1 .heart {
     transform: translateY(-2px);
 }
 
-.document-card h3, .experiment-card h3 {
+.document-card h3 {
     color: white;
     margin-bottom: 0.5rem;
 }
 
-.document-card p, .experiment-card p {
+.document-card p {
     color: #aaa;
     font-size: 0.9rem;
     margin: 0;
 }
 
-/* Rabbit Hole Section */
-.rabbit-hole .content-box {
-    border: 1px solid #ff00ff;
-    box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
-}
-
-.rabbit-hole .experiment-card {
-    border: 1px solid rgba(255, 0, 255, 0.3);
-}
-
-.rabbit-hole .experiment-card:hover {
-    border-color: #ff00ff;
-}
-
-.rabbit-hole h2::after {
-    background: linear-gradient(90deg, #ff00ff, #cc00cc);
-}
-
-
-.rabbit-hole .experiment-card:hover {
-    border-color: #ff00ff;
-}
-
 /* Section Headers */
-.documents h2, .rabbit-hole h2 {
-    margin-bottom: 1.5rem;
-    color: white;
-    position: relative;
-    display: inline-block;
-}
-
-.documents h2::after, .rabbit-hole h2::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 50px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-color), var(--accent-dark));
-    border-radius: 3px;
-}
-
-.rabbit-hole h2::after {
-    background: linear-gradient(90deg, #ff00ff, #cc00cc);
-}
-
-/* Section Spacing */
-.documents, .rabbit-hole {
-    margin: 4rem 0;
-}
-
-/* About Section */
-.about {
-    margin: 4rem 0;
-}
-
-/* Section Headers */
-.about h2, .projects h2, .documents h2, .rabbit-hole h2 {
+.about h2, .projects h2, .documents h2 {
     margin-bottom: 1.5rem;
     color: white;
     position: relative;
@@ -647,8 +569,7 @@ h1 .heart {
 /* Section Title Underlines */
 .about h2::after, 
 .projects h2::after, 
-.documents h2::after, 
-.rabbit-hole h2::after {
+.documents h2::after {
     content: '';
     position: absolute;
     bottom: -10px;
@@ -668,10 +589,6 @@ h1 .heart {
 
 .documents h2::after {
     background: linear-gradient(90deg, #FFA500, #CC8400);
-}
-
-.rabbit-hole h2::after {
-    background: linear-gradient(90deg, #ff00ff, #cc00cc);
 }
 
 /* Stats */
