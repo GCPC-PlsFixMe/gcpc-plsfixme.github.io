@@ -42,15 +42,23 @@
             
             <nav class="main-nav">
                 <div class="nav-container">
-                    <a href="index.html" class="nav-link">
+                    <a href="/" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
-                    <a href="guides.html" class="nav-link">
-                        <i class="fas fa-book"></i>
-                        <span>Guides</span>
+                    <a href="/subpages/projects/" class="nav-link">
+                        <i class="fas fa-code-branch"></i>
+                        <span>Projects</span>
                     </a>
-                    <a href="index.html#about" class="nav-link">
+                    <a href="/subpages/documents/" class="nav-link">
+                        <i class="fas fa-book"></i>
+                        <span>Documents</span>
+                    </a>
+                    <a href="/subpages/rabbit-hole/" class="nav-link">
+                        <i class="fas fa-flask"></i>
+                        <span>Rabbit Hole</span>
+                    </a>
+                    <a href="/subpages/about/" class="nav-link">
                         <i class="fas fa-info-circle"></i>
                         <span>About</span>
                     </a>
